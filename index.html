@@ -1,0 +1,1990 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>연차 관리 시스템</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--bg2:#f5f4f0;--bg3:#eeecea;--bg4:#e6e4e0;
+  --text:#181816;--text2:#5c5c58;--text3:#9c9c98;
+  --border:#e4e3dd;--border2:#d0cfc8;
+  --blue:#1a6bb5;--blue-bg:#eaf3fc;--blue-text:#0e4a82;
+  --green:#0d6b4f;--green-bg:#e3f5ee;--green-text:#074d38;
+  --amber:#7a4808;--amber-bg:#fdf0dc;--amber-text:#5a3405;
+  --red:#b02020;--red-bg:#fdf0f0;--red-text:#7a1515;
+  --purple:#4a43a8;--purple-bg:#f0effd;--purple-text:#322d7a;
+  --coral:#8a3318;--coral-bg:#fdf0eb;--coral-text:#622410;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.04);
+  --radius:14px;--radius-sm:8px;--radius-xs:6px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1a1a18;--bg2:#222220;--bg3:#2a2a28;--bg4:#323230;
+  --text:#f0efe8;--text2:#9a9a94;--text3:#666662;
+  --border:#383834;--border2:#484844;
+  --blue:#4a96e8;--blue-bg:#0a2a48;--blue-text:#7ab8f0;
+  --green:#2ab882;--green-bg:#062e1e;--green-text:#60d4a2;
+  --amber:#e8a030;--amber-bg:#2e1a04;--amber-text:#f0c070;
+  --red:#e85050;--red-bg:#2e0a0a;--red-text:#f08080;
+  --purple:#8880e8;--purple-bg:#1a1848;--purple-text:#a8a4f0;
+  --coral:#e87050;--coral-bg:#2e1208;--coral-text:#f0a890;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.2);
+  --shadow-md:0 4px 12px rgba(0,0,0,.3);
+}}
+body{font-family:'Noto Sans KR','Pretendard',-apple-system,sans-serif;background:var(--bg3);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+
+/* ── LOADING ── */
+#loading{position:fixed;inset:0;background:var(--bg3);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:998;gap:14px}
+.spinner{width:30px;height:30px;border:2.5px solid var(--border2);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── LOGIN ── */
+#pin-gate{position:fixed;inset:0;background:var(--bg3);display:flex;align-items:center;justify-content:center;z-index:999;padding:16px}
+.login-wrap{background:var(--bg);border-radius:22px;box-shadow:var(--shadow-md);padding:40px;width:100%;max-width:400px}
+.login-logo{display:none}
+.login-title{font-size:18px;font-weight:600;color:var(--text);margin-bottom:4px;text-align:center;letter-spacing:-.3px}
+.login-sub{font-size:13px;color:var(--text3);margin-bottom:28px;text-align:center}
+.login-tabs{display:flex;gap:4px;background:var(--bg2);border-radius:10px;padding:4px;margin-bottom:22px}
+.login-tab{flex:1;padding:8px;border:none;background:transparent;border-radius:7px;font-size:13px;cursor:pointer;color:var(--text2);font-family:inherit;transition:all .15s;font-weight:400}
+.login-tab.active{background:var(--bg);color:var(--text);font-weight:500;box-shadow:var(--shadow-sm)}
+.login-section{display:none}.login-section.active{display:block}
+.proj-list{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;margin-bottom:16px}
+.proj-login-btn{display:flex;align-items:center;gap:10px;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg2);cursor:pointer;transition:all .15s;width:100%}
+.proj-login-btn:hover{border-color:var(--border2);background:var(--bg)}
+.proj-login-btn.selected{border-color:var(--blue);background:var(--blue-bg)}
+.proj-color-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.proj-login-name{font-size:13px;font-weight:500;color:var(--text);flex:1;text-align:left}
+.proj-login-count{font-size:11px;color:var(--text3)}
+.pin-label{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.pin-input{width:100%;padding:12px 16px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg2);color:var(--text);font-size:20px;text-align:center;letter-spacing:10px;outline:none;transition:border-color .2s;font-family:inherit;margin-bottom:10px}
+.pin-input:focus{border-color:var(--blue);background:var(--bg)}
+.pin-btn{width:100%;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:opacity .15s}
+.pin-btn:hover{opacity:.88}
+.pin-err{font-size:12px;color:var(--red);margin-top:8px;min-height:18px;text-align:center}
+
+/* ── MODE BADGE ── */
+.mode-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500}
+.mode-badge.admin{background:var(--amber-bg);color:var(--amber-text)}
+.mode-badge.project{background:var(--blue-bg);color:var(--blue-text)}
+
+/* ── APP LAYOUT ── */
+#app{display:none;max-width:1180px;margin:0 auto;padding:28px 24px}
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:14px}
+.topbar-left h1{font-size:20px;font-weight:600;color:var(--text);letter-spacing:-.3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sync-info{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:5px;margin-top:4px}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+.sync-dot.saving{background:var(--amber)}.sync-dot.error{background:var(--red)}
+.topbar-right{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ── BUTTONS ── */
+.btn{padding:8px 16px;border:1px solid var(--border2);border-radius:var(--radius-xs);background:var(--bg);color:var(--text);font-size:13px;cursor:pointer;font-family:inherit;transition:all .15s;font-weight:400}
+.btn:hover{background:var(--bg2)}.btn:active{transform:scale(.98)}.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}.btn.primary:hover{opacity:.9}
+.btn.purple{background:var(--purple);color:#fff;border-color:var(--purple)}.btn.purple:hover{opacity:.9}
+.btn.green{background:var(--green);color:#fff;border-color:var(--green)}.btn.green:hover{opacity:.9}
+.btn.amber{background:var(--amber);color:#fff;border-color:var(--amber)}.btn.amber:hover{opacity:.9}
+.btn.coral{background:var(--coral);color:#fff;border-color:var(--coral)}.btn.coral:hover{opacity:.9}
+.btn.sm{padding:5px 11px;font-size:12px}
+.btn.danger{color:var(--red);border-color:var(--border);background:transparent}.btn.danger:hover{background:var(--red-bg);border-color:var(--red)}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--text2)}.btn.ghost:hover{background:var(--bg2)}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:2px;background:var(--bg2);border-radius:10px;padding:4px;margin-bottom:22px;width:fit-content;flex-wrap:wrap}
+.tab{padding:8px 18px;border:none;background:transparent;border-radius:7px;font-size:13px;cursor:pointer;color:var(--text2);font-family:inherit;transition:all .18s}
+.tab:hover{color:var(--text);background:rgba(0,0,0,.04)}
+.tab.active{background:var(--bg);color:var(--text);font-weight:500;box-shadow:var(--shadow-sm)}
+.tab.admin-tab{color:var(--amber-text)}
+.tab.admin-tab.active{background:var(--amber-bg);color:var(--amber-text)}
+.section{display:none}.section.active{display:block}
+
+/* ── SHARED BANNER ── */
+.shared-banner{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:22px}
+.shared-banner-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.shared-banner-title{font-size:11px;font-weight:600;color:var(--text3);display:flex;align-items:center;gap:6px;text-transform:uppercase;letter-spacing:.5px}
+.shared-chips{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.schip{display:flex;align-items:center;gap:8px;padding:6px 10px 6px 14px;background:var(--purple-bg);border-radius:20px;font-size:12px;color:var(--purple-text);min-width:0}
+@media(max-width:700px){.shared-chips{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:440px){.shared-chips{grid-template-columns:1fr}}
+.schip-name{font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.schip-date{font-size:11px;opacity:.7;white-space:nowrap;flex-shrink:0}
+.schip-days{font-size:11px;font-weight:600;background:var(--purple);color:#fff;padding:1px 7px;border-radius:10px;flex-shrink:0;white-space:nowrap}
+.schip-actions{display:flex;gap:1px;margin-left:auto;flex-shrink:0}
+.schip-btn{background:none;border:none;border-radius:4px;cursor:pointer;color:var(--purple-text);font-size:10px;padding:2px 6px;font-family:inherit;transition:all .12s;opacity:.6}
+.schip-btn:hover{opacity:1;background:rgba(74,67,168,.12)}
+.schip-del{background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;line-height:1;padding:0 3px;transition:color .12s;opacity:.45}
+.schip-del:hover{color:var(--red);opacity:1}
+.exception-badge{background:var(--amber-bg);color:var(--amber-text);font-size:10px;padding:1px 6px;border-radius:10px;font-weight:500}
+
+/* ── METRICS ── */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:22px}
+.metric{background:var(--bg);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:20px 18px}
+.metric-label{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.metric-val{font-size:26px;font-weight:600;color:var(--text);letter-spacing:-.5px;line-height:1.1}
+.metric-sub{font-size:12px;color:var(--text3);margin-top:4px}
+
+/* ── PROJECT TAGS ── */
+.proj-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.proj-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* ── MEMBER CARDS (도넛 스타일) ── */
+.member-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.member-card{background:var(--bg);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:20px;transition:box-shadow .2s}
+.member-card:hover{box-shadow:var(--shadow-md)}
+.mcard-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.mcard-name{font-size:15px;font-weight:600;color:var(--text);letter-spacing:-.2px}
+.mcard-role{font-size:12px;color:var(--text3);margin-top:1px}
+.mcard-projs{display:flex;gap:4px;flex-wrap:wrap;margin-top:3px}
+.mcard-donut-row{display:flex;align-items:center;gap:18px;margin-bottom:12px}
+.donut-wrap{position:relative;flex-shrink:0;width:82px;height:82px}
+.donut-wrap svg{display:block}
+.donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.donut-pct{font-size:17px;font-weight:700;color:var(--text);letter-spacing:-.5px;line-height:1}
+.donut-lbl{font-size:9px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.3px;margin-top:2px}
+.mcard-legend{display:flex;flex-direction:column;gap:8px;flex:1;min-width:0}
+.mcard-leg-row{display:flex;align-items:center;gap:7px}
+.mcard-leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.mcard-leg-label{font-size:11px;color:var(--text2);flex:1}
+.mcard-leg-val{font-size:13px;font-weight:600;color:var(--text)}
+.mcard-leg-sub{font-size:10px;color:var(--text3);margin-left:1px}
+.mcard-next{display:flex;align-items:center;gap:7px;padding:8px 10px;background:var(--bg2);border-radius:var(--radius-xs);font-size:11px;color:var(--text2);margin-top:2px}
+.mcard-next-icon{font-size:12px;flex-shrink:0}
+.vblue{color:var(--blue)}.vgreen{color:var(--green)}.vpurple{color:var(--purple)}.vred{color:var(--red)}.vcoral{color:var(--coral)}
+
+/* ── TABLE ── */
+.table-wrap{background:var(--bg);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden}
+.table-head{display:grid;grid-template-columns:1fr 1.2fr 90px 60px 1fr 130px;gap:8px;padding:12px 18px;background:var(--bg2);font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.table-row{display:grid;grid-template-columns:1fr 1.2fr 90px 60px 1fr 130px;gap:8px;padding:11px 18px;border-top:1px solid var(--border);align-items:center;font-size:13px;transition:background .1s}
+.table-row:hover{background:var(--bg2)}
+.table-row.srow{background:var(--purple-bg)}.table-row.srow:hover{filter:brightness(.97)}
+@media(max-width:640px){.table-head,.table-row{grid-template-columns:1fr 1fr 80px 50px}.table-head span:nth-child(n+5),.table-row span:nth-child(n+5){display:none}}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500}
+.badge.annual{background:var(--blue-bg);color:var(--blue-text)}
+.badge.half{background:var(--green-bg);color:var(--green-text)}
+.badge.sick{background:var(--amber-bg);color:var(--amber-text)}
+.badge.shared{background:var(--purple-bg);color:var(--purple-text)}
+.badge.project{background:var(--coral-bg);color:var(--coral-text)}
+
+/* ── CALENDAR ── */
+.cal-nav{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.cal-nav span{font-size:17px;font-weight:600;min-width:115px;letter-spacing:-.3px}
+.cal-nav button{width:32px;height:32px;border:1px solid var(--border);border-radius:var(--radius-xs);background:var(--bg);cursor:pointer;color:var(--text2);font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.cal-nav button:hover{background:var(--bg2)}
+.cal-grid{background:var(--bg);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden}
+.cal-wh{display:grid;grid-template-columns:repeat(7,1fr);background:var(--bg2)}
+.cal-dl{text-align:center;padding:10px 4px;font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.cal-days{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal-cell{min-height:88px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:7px 6px;font-size:12px}
+.cal-cell.sc{background:var(--purple-bg)}
+.cal-cell:nth-child(7n){border-right:none}
+.cal-num{font-weight:500;color:var(--text2);margin-bottom:4px;font-size:12px}
+.cal-num.today{background:var(--blue);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;margin-bottom:4px}
+.cal-num.sun{color:var(--red)}.cal-num.sat{color:var(--blue)}
+.cal-ev{font-size:10px;padding:2px 6px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.cal-ev.annual{background:var(--blue-bg);color:var(--blue-text)}
+.cal-ev.half{background:var(--green-bg);color:var(--green-text)}
+.cal-ev.sick{background:var(--amber-bg);color:var(--amber-text)}
+.cal-ev.shared{background:var(--purple);color:#fff}
+.cal-ev.project{background:var(--coral-bg);color:var(--coral-text)}
+.cal-ev.holiday{background:#fff0f0;color:#c0392b;font-weight:600}
+@media(prefers-color-scheme:dark){.cal-ev.holiday{background:#3a0f0f;color:#f08080}}
+.cal-cell.holiday-cell{background:#fff8f8}
+@media(prefers-color-scheme:dark){.cal-cell.holiday-cell{background:#2a1010}}
+.cal-num.holiday{color:var(--red)!important}
+.cal-more{font-size:10px;color:var(--text3)}
+.cal-empty{border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-height:88px}
+.cal-empty:nth-child(7n){border-right:none}
+.cal-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--text2);margin-top:12px}
+.cal-legend span{display:flex;align-items:center;gap:5px}
+.cleg{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+
+/* ── PROJECT MANAGE CARDS ── */
+.proj-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.proj-card{background:var(--bg);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:20px;transition:box-shadow .2s,opacity .15s;cursor:default;position:relative}
+.proj-card:hover{box-shadow:var(--shadow-md)}
+.proj-card.dragging{opacity:.35;box-shadow:0 8px 24px rgba(0,0,0,.14)}
+.proj-card.drag-over{box-shadow:0 0 0 2.5px var(--blue),var(--shadow-sm)}
+.proj-card-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.proj-drag-handle{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:3px;cursor:grab;padding:4px;opacity:.25;transition:opacity .15s}
+.proj-drag-handle:hover{opacity:.7}
+.proj-drag-handle:active{cursor:grabbing}
+.proj-drag-handle span{display:block;width:16px;height:2px;background:var(--text2);border-radius:1px}
+.proj-color-big{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+.proj-card-name{font-size:16px;font-weight:600;color:var(--text)}
+.proj-card-meta{font-size:12px;color:var(--text3);margin-top:1px}
+.proj-card-actions{display:flex;gap:6px;margin-top:14px}
+
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px;backdrop-filter:blur(2px)}
+.modal{background:var(--bg);border-radius:18px;padding:28px 28px 24px;width:100%;max-width:460px;box-shadow:var(--shadow-md);max-height:90vh;overflow-y:auto}
+.modal.wide{max-width:540px}
+.modal h3{font-size:17px;font-weight:600;margin-bottom:22px;color:var(--text);letter-spacing:-.2px}
+.fg{margin-bottom:16px}
+.fg label{display:block;font-size:11px;font-weight:500;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.fg input,.fg select{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-xs);background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border-color .2s,background .2s}
+.fg input:focus,.fg select:focus{border-color:var(--blue);background:var(--bg)}
+.frow{display:flex;gap:10px}.frow .fg{flex:1}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:22px;padding-top:18px;border-top:1px solid var(--border)}
+.info-box{background:var(--bg2);border-radius:var(--radius-xs);padding:11px 13px;font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.7}
+.proj-check-list{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto}
+.proj-check-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-xs);cursor:pointer;background:var(--bg);transition:all .12s}
+.proj-check-item:hover{background:var(--bg2)}
+.proj-check-item.checked{border-color:var(--blue);background:var(--blue-bg)}
+.proj-check-item input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:var(--blue)}
+.member-check-list{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;padding:2px}
+.member-check-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-xs);cursor:pointer;background:var(--bg);transition:all .1s}
+.member-check-item:hover{background:var(--bg2)}
+.member-check-item input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--purple)}
+.member-check-item.checked{background:var(--amber-bg);border-color:var(--amber)}
+
+/* ── COLOR PICKER ── */
+.color-picker{display:flex;gap:8px;flex-wrap:wrap;padding:4px 0}
+.color-swatch{width:26px;height:26px;border-radius:50%;cursor:pointer;transition:transform .15s;border:2.5px solid transparent}
+.color-swatch:hover{transform:scale(1.15)}
+.color-swatch.selected{border-color:var(--text);transform:scale(1.15)}
+
+/* ── MEMBER MANAGE ── */
+.empty{text-align:center;padding:48px;color:var(--text3);font-size:14px}
+.filter-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.filter-bar select{padding:8px 11px;border:1px solid var(--border);border-radius:var(--radius-xs);background:var(--bg);color:var(--text);font-size:13px;font-family:inherit;outline:none}
+.mmlist{display:flex;flex-direction:column;gap:8px}
+.mmrow{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:var(--radius-sm);box-shadow:var(--shadow-sm);padding:14px 16px;transition:box-shadow .15s,opacity .15s}
+.mmrow:hover{box-shadow:var(--shadow-md)}
+.mmrow.dragging{opacity:.35}
+.mmrow.drag-over{box-shadow:0 0 0 2px var(--blue),var(--shadow-sm)}
+.drag-handle{display:flex;flex-direction:column;gap:3px;cursor:grab;padding:4px 3px;flex-shrink:0;opacity:.28;transition:opacity .15s}
+.drag-handle:hover{opacity:.7}.drag-handle:active{cursor:grabbing}
+.drag-handle span{display:block;width:16px;height:2px;background:var(--text2);border-radius:1px}
+.order-btns{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
+.order-btn{width:22px;height:22px;border:1px solid var(--border);border-radius:4px;background:transparent;cursor:pointer;color:var(--text3);font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .1s}
+.order-btn:hover{background:var(--bg2);color:var(--text)}.order-btn:disabled{opacity:.18;cursor:not-allowed}
+.mmrow-info{flex:1;min-width:0}
+.mmrow-name{font-size:14px;font-weight:600;color:var(--text);letter-spacing:-.1px}
+.mmrow-meta{font-size:12px;color:var(--text3);margin-top:2px}
+.mmrow-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.divider{height:1px;background:var(--border);margin:24px 0}
+.section-heading{font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px;letter-spacing:-.2px}
+/* ── 프로젝트 필터 바 ── */
+.proj-filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;align-items:center}
+.proj-filter-btn{display:flex;align-items:center;gap:6px;padding:7px 16px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg);cursor:pointer;font-size:13px;font-weight:400;color:var(--text2);font-family:inherit;transition:all .15s}
+.proj-filter-btn:hover{border-color:var(--border2);color:var(--text);background:var(--bg2)}
+.proj-filter-btn.active{font-weight:600;color:#fff;border-color:transparent}
+.proj-filter-btn.all.active{background:var(--text);color:var(--bg)}
+.proj-filter-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.proj-filter-count{font-size:11px;opacity:.7}
+.settings-card{background:var(--bg);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:22px;margin-bottom:14px}
+/* ── MONTHLY CHART ── */
+.monthly-chart-card{background:var(--bg);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:22px 24px;margin-bottom:22px}
+.monthly-chart-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.monthly-chart-title{font-size:14px;font-weight:600;color:var(--text);letter-spacing:-.2px;display:flex;align-items:center;gap:8px}
+.monthly-chart-year{font-size:12px;font-weight:400;color:var(--text3);letter-spacing:0}
+.monthly-chart-legend{display:flex;gap:14px}
+.mcleg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
+.mcleg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.monthly-chart-body{display:grid;grid-template-columns:repeat(12,1fr);gap:8px;align-items:end;min-height:140px}
+.mc-col{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:default}
+.mc-col:hover .mc-bars{filter:brightness(.93)}
+.mc-bars{display:flex;flex-direction:column;gap:2px;align-items:center;width:100%;justify-content:flex-end}
+.mc-bar-wrap{width:100%;display:flex;flex-direction:column;gap:1px;align-items:center}
+.mc-bar{width:70%;min-height:2px;border-radius:3px 3px 0 0;transition:height .5s cubic-bezier(.4,0,.2,1)}
+.mc-bar.personal{background:var(--blue);border-radius:3px 3px 0 0}
+.mc-bar.shared{background:var(--purple);border-radius:0}
+.mc-bar.project{background:var(--coral);border-radius:0 0 3px 3px}
+.mc-total{font-size:10px;font-weight:600;color:var(--text2);min-height:14px;line-height:1}
+.mc-label{font-size:10px;color:var(--text3);font-weight:500;white-space:nowrap}
+.mc-col.current .mc-label{color:var(--blue);font-weight:700}
+.mc-col.current .mc-bar.personal{background:var(--blue)}
+.mc-tooltip{position:absolute;background:var(--text);color:var(--bg);border-radius:8px;padding:8px 12px;font-size:11px;pointer-events:none;z-index:100;white-space:nowrap;box-shadow:var(--shadow-md);line-height:1.8}
+@media(max-width:600px){.monthly-chart-body{gap:4px}.mc-bar{width:80%}.mc-label{font-size:9px}}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:11px 22px;border-radius:24px;font-size:13px;z-index:9999;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;box-shadow:var(--shadow-md)}
+.toast.show{opacity:1}
+
+/* ── 멤버카드 클릭 상세 ── */
+.member-card{cursor:pointer;user-select:none}
+.member-card.expanded{box-shadow:var(--shadow-md);ring:2px solid var(--blue)}
+.member-card-detail{display:none;margin-top:14px;border-top:1px solid var(--border);padding-top:14px;cursor:default}
+.member-card-detail.open{display:block}
+.mcd-summary-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.mcd-stat{background:var(--bg2);border-radius:var(--radius-xs);padding:8px 10px;text-align:center}
+.mcd-stat-num{font-size:17px;font-weight:700;line-height:1;letter-spacing:-.5px}
+.mcd-stat-lbl{font-size:10px;color:var(--text3);margin-top:2px;font-weight:500}
+.mcd-type-tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}
+.mcd-type-tab{padding:3px 10px;border-radius:16px;font-size:11px;font-weight:500;border:1px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;transition:all .13s;font-family:inherit}
+.mcd-type-tab:hover{border-color:var(--border2);color:var(--text)}
+.mcd-type-tab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.mcd-list{display:flex;flex-direction:column;gap:5px;max-height:220px;overflow-y:auto}
+.mcd-row{display:flex;align-items:center;gap:9px;padding:7px 10px;background:var(--bg2);border-radius:var(--radius-xs);border:1px solid var(--border);font-size:12px;transition:background .1s}
+.mcd-row:hover{background:var(--bg3)}
+.mcd-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.mcd-date{font-size:11px;font-weight:600;color:var(--text2);min-width:92px;white-space:nowrap}
+.mcd-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;white-space:nowrap;flex-shrink:0}
+.mcd-memo{flex:1;color:var(--text2);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mcd-days{font-size:11px;font-weight:700;color:var(--text3);white-space:nowrap;padding-left:6px;margin-left:auto;flex-shrink:0}
+.mcd-empty{font-size:12px;color:var(--text3);text-align:center;padding:16px 0}
+.mcd-expand-hint{margin-top:12px;display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 0;border-top:1px dashed var(--border);color:var(--text3);font-size:11px;font-weight:500;letter-spacing:.2px;transition:color .15s}
+.member-card:hover .mcd-expand-hint{color:var(--blue)}
+
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <div style="font-size:13px;color:var(--text3)">데이터 불러오는 중...</div>
+</div>
+
+<!-- ── 로그인 ── -->
+<div id="pin-gate" style="display:none">
+  <div class="login-wrap">
+    <div style="text-align:center;margin-bottom:4px"><span style="color:#aa41c0;font-size:20px;font-weight:700;letter-spacing:-.5px">BWA</span></div>
+    <div class="login-title">범우건축 | 연차 관리 시스템</div>
+    <div class="login-sub">2026년 · 접속 권한을 선택하세요</div>
+    <div class="login-tabs">
+      <button class="login-tab active" onclick="switchLoginTab('project')">프로젝트 접속</button>
+      <button class="login-tab" onclick="switchLoginTab('admin')">관리자</button>
+    </div>
+
+    <!-- 프로젝트 로그인 -->
+    <div class="login-section active" id="ls-project">
+      <div id="proj-login-list" class="proj-list"></div>
+      <div class="pin-label">비밀번호</div>
+      <input class="pin-input" type="password" id="proj-pin-input" maxlength="20" placeholder="••••" onkeydown="if(event.key==='Enter')loginProject()">
+      <button class="pin-btn" onclick="loginProject()">프로젝트 입장</button>
+    </div>
+
+    <!-- 관리자 로그인 -->
+    <div class="login-section" id="ls-admin">
+      <div class="info-box" style="margin-bottom:18px">관리자는 모든 프로젝트와 팀원을 관리할 수 있습니다.</div>
+      <div class="pin-label">관리자 비밀번호</div>
+      <input class="pin-input" type="password" id="admin-pin-input" maxlength="20" placeholder="••••" onkeydown="if(event.key==='Enter')loginAdmin()">
+      <button class="pin-btn" style="background:var(--amber)" onclick="loginAdmin()">관리자 입장</button>
+
+    </div>
+
+    <div class="pin-err" id="pin-err"></div>
+  </div>
+</div>
+
+<!-- ── 메인 앱 ── -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>
+        📋 연차 관리 시스템
+        <span class="mode-badge" id="mode-badge"></span>
+      </h1>
+      <div class="sync-info">
+        <span class="sync-dot" id="sync-dot"></span>
+        <span id="sync-label">연결 중...</span>
+        <span style="margin-left:8px;color:var(--border2)">|</span>
+        <button class="btn ghost sm" onclick="logout()" style="padding:2px 8px;font-size:11px">로그아웃</button>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn green" onclick="exportExcel()">📥 엑셀</button>
+      <button class="btn ghost sm" onclick="manualRefresh()" id="refresh-btn">↻</button>
+      <button class="btn purple" onclick="openShared()">🤝 공동연차</button>
+      <button class="btn primary" onclick="openLeave()">+ 연차 등록</button>
+    </div>
+  </div>
+
+  <div id="shared-banner" class="shared-banner"></div>
+
+  <div class="tabs" id="main-tabs">
+    <button class="tab active" onclick="go('dashboard')">대시보드</button>
+    <button class="tab" onclick="go('calendar')">캘린더</button>
+    <button class="tab" onclick="go('leaves')">연차 목록</button>
+    <button class="tab" onclick="go('members')">팀원 관리</button>
+    <button class="tab admin-tab" id="tab-admin-btn" onclick="go('admin')" style="display:none">⚙ 관리자</button>
+  </div>
+
+  <!-- 대시보드 -->
+  <div id="tab-dashboard" class="section active">
+    <div class="proj-filter-bar" id="proj-filter-bar"></div>
+    <div class="metrics" id="metrics"></div>
+
+    <div class="monthly-chart-card" id="monthly-chart-card">
+      <div class="monthly-chart-head">
+        <div class="monthly-chart-title">📊 월별 연차 현황 <span class="monthly-chart-year">2026</span></div>
+        <div class="monthly-chart-legend">
+          <span class="mcleg"><span class="mcleg-dot" style="background:var(--blue)"></span>개인</span>
+          <span class="mcleg"><span class="mcleg-dot" style="background:var(--purple)"></span>공동</span>
+          <span class="mcleg"><span class="mcleg-dot" style="background:var(--coral)"></span>프로젝트</span>
+        </div>
+      </div>
+      <div class="monthly-chart-body" id="monthly-chart-body"></div>
+    </div>
+    <div class="member-grid" id="member-grid"></div>
+  </div>
+
+  <!-- 캘린더 -->
+  <div id="tab-calendar" class="section">
+    <div class="cal-nav">
+      <button onclick="pm()">&#8249;</button>
+      <span id="cal-label"></span>
+      <button onclick="nm()">&#8250;</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-legend">
+      <span><span class="cleg" style="background:var(--purple)"></span>공동연차</span>
+      <span><span class="cleg" style="background:var(--blue-bg);border:1px solid var(--blue)"></span>개인연차</span>
+      <span><span class="cleg" style="background:var(--green-bg);border:1px solid var(--green)"></span>반차</span>
+      <span><span class="cleg" style="background:var(--amber-bg);border:1px solid var(--amber)"></span>병가</span>
+      <span><span class="cleg" style="background:var(--coral-bg);border:1px solid var(--coral)"></span>프로젝트 휴가</span>
+      <span><span class="cleg" style="background:#fff0f0;border:1px solid #c0392b"></span>공휴일</span>
+    </div>
+  </div>
+
+  <!-- 연차 목록 -->
+  <div id="tab-leaves" class="section">
+    <div class="filter-bar">
+      <select id="fm" onchange="renderLeaves()"><option value="">전체 팀원</option></select>
+      <select id="ft" onchange="renderLeaves()">
+        <option value="">전체 유형</option>
+        <option value="shared">공동연차</option>
+        <option value="annual">개인연차</option>
+        <option value="half">반차</option>
+        <option value="sick">병가</option>
+        <option value="project">프로젝트 휴가</option>
+      </select>
+    </div>
+    <div id="leaves-table"></div>
+  </div>
+
+  <!-- 팀원 관리 -->
+  <div id="tab-members" class="section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <div>
+        <div class="section-heading" style="margin-bottom:2px">팀원 관리</div>
+        <div style="font-size:12px;color:var(--text3)" id="members-scope-note"></div>
+      </div>
+      <button class="btn primary" onclick="openMember()" id="add-member-btn">+ 팀원 추가</button>
+    </div>
+    <div class="filter-bar">
+      <select id="mf-proj" onchange="renderMembers()" id="mf-proj">
+        <option value="">전체 프로젝트</option>
+      </select>
+    </div>
+    <div id="mmlist" class="mmlist"></div>
+  </div>
+
+  <!-- 관리자 탭 -->
+  <div id="tab-admin" class="section">
+    <!-- 프로젝트 관리 -->
+    <div class="section-heading">프로젝트 관리</div>
+    <div class="proj-grid" id="proj-grid"></div>
+    <button class="btn primary" onclick="openAddProject()" style="margin-bottom:28px">+ 프로젝트 추가</button>
+
+    <div class="divider"></div>
+
+    <!-- 관리자 설정 -->
+    <div class="section-heading">시스템 설정</div>
+    <div class="settings-card">
+      <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text)">관리자 비밀번호 변경</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input type="password" id="new-admin-pin" placeholder="새 관리자 비밀번호" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-xs);background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit;outline:none;width:220px">
+        <button class="btn amber" onclick="changeAdminPin()">변경</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 공동연차 모달 -->
+<div id="modal-shared" style="display:none">
+  <div class="overlay" onclick="if(event.target===this)cm('modal-shared')">
+    <div class="modal">
+      <h3 id="shared-modal-title">🤝 공동연차 등록</h3>
+      <input type="hidden" id="sl-edit-id">
+      <div class="info-box">공동연차는 <strong>현재 보이는 모든 팀원</strong>에게 적용됩니다. 등록 후 출근자를 개별 지정할 수 있어요.</div>
+      <div class="frow">
+        <div class="fg"><label>시작일</label><input type="date" id="ss" min="2026-01-01" max="2026-12-31" oninput="upSP()"></div>
+        <div class="fg"><label>종료일</label><input type="date" id="se" min="2026-01-01" max="2026-12-31" oninput="upSP()"></div>
+      </div>
+      <div class="fg"><label>이름/설명</label><input type="text" id="sm" placeholder="예: 여름 단체연차, 창립기념일"></div>
+      <div class="info-box" id="sp"></div>
+      <div class="modal-btns">
+        <button class="btn" onclick="cm('modal-shared')">취소</button>
+        <button class="btn purple" onclick="submitShared()">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 출근자 지정 모달 -->
+<div id="modal-exception" style="display:none">
+  <div class="overlay" onclick="if(event.target===this)cm('modal-exception')">
+    <div class="modal">
+      <h3>공동연차 출근자 지정</h3>
+      <div class="info-box" id="exc-info"></div>
+      <div class="fg">
+        <label>출근한 팀원 (체크 시 연차 차감 제외)</label>
+        <div class="member-check-list" id="exc-member-list"></div>
+      </div>
+      <div class="modal-btns">
+        <button class="btn" onclick="cm('modal-exception')">취소</button>
+        <button class="btn purple" onclick="submitException()">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 개인연차 모달 -->
+<div id="modal-leave" style="display:none">
+  <div class="overlay" onclick="if(event.target===this)cm('modal-leave')">
+    <div class="modal">
+      <h3 id="leave-modal-title">연차 / 휴가 등록</h3>
+      <input type="hidden" id="leave-edit-id">
+      <div class="fg"><label>팀원</label><select id="lm"></select></div>
+      <div class="fg"><label>유형</label>
+        <select id="lt" onchange="upLF()">
+          <option value="annual">연차 (1일 차감)</option>
+          <option value="half">반차 (0.5일 차감)</option>
+          <option value="sick">병가 (연차 차감 없음)</option>
+          <option value="project">프로젝트 휴가 (연차 차감 없음)</option>
+        </select>
+      </div>
+      <div class="frow">
+        <div class="fg"><label>시작일</label><input type="date" id="ls" min="2026-01-01" max="2026-12-31" oninput="upLE()"></div>
+        <div class="fg" id="le-group"><label>종료일</label><input type="date" id="le" min="2026-01-01" max="2026-12-31"></div>
+      </div>
+      <div class="info-box" id="lp"></div>
+      <div class="fg"><label>메모 (선택)</label><input type="text" id="lmemo" placeholder="사유 또는 메모"></div>
+      <div class="modal-btns">
+        <button class="btn" onclick="cm('modal-leave')">취소</button>
+        <button class="btn primary" id="leave-submit-btn" onclick="submitLeave()">등록</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 팀원 추가/수정 모달 -->
+<div id="modal-member" style="display:none">
+  <div class="overlay" onclick="if(event.target===this)cm('modal-member')">
+    <div class="modal wide">
+      <h3 id="member-modal-title">팀원 추가</h3>
+      <input type="hidden" id="mm-id">
+      <div class="frow">
+        <div class="fg"><label>이름</label><input type="text" id="mm-name" placeholder="홍길동"></div>
+        <div class="fg"><label>직책</label><input type="text" id="mm-role" placeholder="개발자"></div>
+      </div>
+      <div class="fg">
+        <label>입사일 <span style="color:var(--text3);font-weight:400;font-size:10px">(입력 시 연차 자동계산)</span></label>
+        <input type="date" id="mm-joindate" oninput="calcLeavePreview()">
+      </div>
+      <div id="leave-preview-box" style="display:none;background:var(--blue-bg);border-radius:var(--radius-xs);padding:11px 14px;margin-bottom:14px;font-size:12px;line-height:1.8">
+      </div>
+      <div class="fg">
+        <label>연간 연차 일수 <span style="color:var(--text3);font-weight:400;font-size:10px">(자동계산 또는 직접 입력)</span></label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="number" id="mm-days" value="15" min="1" max="60" style="flex:1">
+          <button class="btn sm" onclick="applyCalcDays()" id="apply-calc-btn" style="display:none;flex-shrink:0;white-space:nowrap">자동값 적용</button>
+        </div>
+      </div>
+      <div class="fg">
+        <label>소속 프로젝트 (복수 선택 가능)</label>
+        <div class="proj-check-list" id="mm-proj-list"></div>
+      </div>
+      <div class="info-box" id="mm-info" style="display:none"></div>
+      <div class="modal-btns">
+        <button class="btn" onclick="cm('modal-member')">취소</button>
+        <button class="btn primary" onclick="submitMember()">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 프로젝트 추가/수정 모달 -->
+<div id="modal-project" style="display:none">
+  <div class="overlay" onclick="if(event.target===this)cm('modal-project')">
+    <div class="modal">
+      <h3 id="proj-modal-title">프로젝트 추가</h3>
+      <input type="hidden" id="pm-id">
+      <div class="fg"><label>프로젝트명</label><input type="text" id="pm-name" placeholder="예: 디자인팀, A프로젝트"></div>
+      <div class="fg">
+        <label>색상</label>
+        <div class="color-picker" id="color-picker"></div>
+      </div>
+      <div class="fg"><label>접속 비밀번호</label><input type="password" id="pm-pin" placeholder="4~8자리"></div>
+      <div class="fg"><label>비밀번호 확인</label><input type="password" id="pm-pin2" placeholder="다시 입력"></div>
+      <div class="modal-btns">
+        <button class="btn" onclick="cm('modal-project')">취소</button>
+        <button class="btn primary" onclick="submitProject()">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ══════════════════════════════════════════════
+//  DATA & STATE
+// ══════════════════════════════════════════════
+const PROJ_COLORS=['#1a6bb5','#0d6b4f','#7a4808','#4a43a8','#8a3318','#b02020','#2d7a6a','#6a3a8a','#3a6a2a','#8a6a00'];
+let D={adminPin:'admin1234',projects:[],members:[],leaves:[],sharedLeaves:[]};
+let MODE=null; // 'admin' or projectId
+let dashFilter='all'; // 대시보드 프로젝트 필터
+let calMonth=new Date().getMonth();
+let isSaving=false,excTargetId=null,dragSrcId=null;
+
+const defaultD={
+  adminPin:'admin1234',
+  projects:[
+    {id:'p1',name:'전체팀',pin:'1234',color:'#1a6bb5'},
+    {id:'p2',name:'디자인팀',pin:'2345',color:'#0d6b4f'},
+    {id:'p3',name:'개발팀',pin:'3456',color:'#4a43a8'}
+  ],
+  members:[
+    {id:'m1',name:'김민준',role:'팀장',totalDays:15,projectIds:['p1','p2','p3']},
+    {id:'m2',name:'이서연',role:'개발자',totalDays:15,projectIds:['p1','p3']},
+    {id:'m3',name:'박지호',role:'디자이너',totalDays:15,projectIds:['p1','p2']},
+    {id:'m4',name:'최유진',role:'기획자',totalDays:12,projectIds:['p1','p2']},
+    {id:'m5',name:'정하은',role:'개발자',totalDays:15,projectIds:['p1','p3']}
+  ],
+  leaves:[
+    {id:'l1',memberId:'m2',type:'annual',start:'2026-02-09',end:'2026-02-10',memo:'설연휴',days:2},
+    {id:'l2',memberId:'m3',type:'half',start:'2026-03-05',end:'2026-03-05',memo:'병원',days:0.5},
+    {id:'l3',memberId:'m4',type:'annual',start:'2026-04-01',end:'2026-04-03',memo:'여행',days:3},
+    {id:'l4',memberId:'m5',type:'annual',start:'2026-05-04',end:'2026-05-06',memo:'황금연휴',days:3}
+  ],
+  sharedLeaves:[
+    {id:'sl1',start:'2026-01-02',end:'2026-01-02',memo:'신정 공동연차',days:1,exceptions:[]}
+  ]
+};
+
+const AC=[
+  {bg:'#eaf3fc',txt:'#0e4a82'},{bg:'#e3f5ee',txt:'#074d38'},
+  {bg:'#f0effd',txt:'#322d7a'},{bg:'#fdf0dc',txt:'#5a3405'},
+  {bg:'#fdf0eb',txt:'#622410'},{bg:'#fdf0f0',txt:'#7a1515'},
+  {bg:'#e3f0e8',txt:'#1a4a2a'},{bg:'#f5eafd',txt:'#4a1a6a'}
+];
+function ac(mid){const i=D.members.findIndex(m=>m.id===mid);return AC[Math.max(0,i)%AC.length];}
+function ini(n){return n.length>=2?n.slice(0,2):n;}
+function biz(s,e){let c=0;const sd=new Date(s),ed=new Date(e);for(let d=new Date(sd);d<=ed;d.setDate(d.getDate()+1)){const w=d.getDay();if(w!==0&&w!==6)c++;}return c;}
+
+// ── 보이는 멤버 필터 ──
+function visibleMembers(){
+  if(MODE==='admin'){
+    // 관리자: dashFilter 기준
+    if(dashFilter==='all') return D.members;
+    return D.members.filter(m=>m.projectIds&&m.projectIds.includes(dashFilter));
+  }
+  // 프로젝트 모드: 해당 프로젝트 멤버
+  return D.members.filter(m=>m.projectIds&&m.projectIds.includes(MODE));
+}
+function visibleSharedLeaves(){
+  return D.sharedLeaves; // 공동연차는 전체 공유 (보이는 멤버에게만 적용)
+}
+
+function sharedDays(mid){
+  return D.sharedLeaves.reduce((s,sl)=>{
+    if(sl.exceptions&&sl.exceptions.includes(mid))return s;
+    return s+sl.days;
+  },0);
+}
+function personalDays(mid){return D.leaves.filter(l=>l.memberId===mid&&l.type!=='sick'&&l.type!=='project').reduce((s,l)=>s+l.days,0);}
+function projectDays(mid){return D.leaves.filter(l=>l.memberId===mid&&l.type==='project').reduce((s,l)=>s+l.days,0);}
+function totalUsed(mid){return personalDays(mid)+sharedDays(mid);}
+
+// ══════════════════════════════════════════════
+//  SERVER
+// ══════════════════════════════════════════════
+async function fetchData(){
+  try{
+    const res=await fetch('api.php?action=get',{cache:'no-store'});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    // 응답 데이터 무결성 검사 — 이상하면 기존 D 유지하고 false 반환
+    if(typeof data!=='object'||data===null||data.error){
+      console.warn('fetchData: 응답 이상',data);
+      setSyncStatus('error','데이터 오류 — 새로고침 필요');
+      return false;
+    }
+    data.sharedLeaves=Array.isArray(data.sharedLeaves)?data.sharedLeaves:[];
+    data.projects=Array.isArray(data.projects)?data.projects:[];
+    data.members=Array.isArray(data.members)?data.members:[];
+    data.leaves=Array.isArray(data.leaves)?data.leaves:[];
+    if(!data.adminPin)data.adminPin='admin1234';
+    // 기존 데이터보다 멤버/연차가 갑자기 0이면 경고 (네트워크 오류 의심)
+    const hadData=D.members.length>0||D.leaves.length>0;
+    const gotEmpty=data.members.length===0&&data.leaves.length===0&&data.projects.length===0;
+    if(hadData&&gotEmpty){
+      console.warn('fetchData: 서버가 빈 데이터 반환 — 기존 데이터 보호');
+      setSyncStatus('error','서버 응답 이상 — 기존 데이터 유지 중');
+      return false;
+    }
+    D=data;
+    setSyncStatus('ok',D._updated_at?'저장됨 '+fmtTime(D._updated_at):'서버 연결됨');
+    return true;
+  }catch(e){setSyncStatus('error','서버 연결 실패');return false;}
+}
+async function saveData(){
+  if(isSaving)return;
+  // 저장 전 유효성 확인 — 빈 데이터는 절대 저장 안 함
+  const hasData=(D.members&&D.members.length>0)||(D.projects&&D.projects.length>0);
+  if(!hasData){
+    console.warn('saveData 차단: 데이터 없음 — 유실 방지');
+    return;
+  }
+  isSaving=true;setSyncStatus('saving','저장 중...');
+  try{
+    const payload={adminPin:D.adminPin,projects:D.projects,members:D.members,leaves:D.leaves,sharedLeaves:D.sharedLeaves};
+    const res=await fetch('api.php?action=save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(res.status>=500){throw new Error('서버 오류 '+res.status);}
+    let r={};
+    try{
+      const txt=await res.text();
+      const m=txt.match(/\{[\s\S]*\}/);
+      if(m)r=JSON.parse(m[0]);
+    }catch(_){}
+    const updatedAt=r.updated_at||new Date().toLocaleString('ko-KR');
+    setSyncStatus('ok','저장됨 '+fmtTime(updatedAt));
+    toast('저장되었습니다');
+  }catch(e){
+    setSyncStatus('error','저장 실패 — 네트워크 확인');
+    toast('저장 실패',true);
+    console.error('saveData error:',e);
+  }
+  isSaving=false;
+}
+function setSyncStatus(s,m){
+  document.getElementById('sync-dot').className='sync-dot'+(s==='saving'?' saving':s==='error'?' error':'');
+  document.getElementById('sync-label').textContent=m;
+}
+function fmtTime(dt){if(!dt)return'';const d=new Date(dt);return d.toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});}
+function toast(msg,isErr=false){const el=document.getElementById('toast');el.textContent=msg;el.style.background=isErr?'var(--red)':'var(--text)';el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2500);}
+
+async function manualRefresh(){
+  const btn=document.getElementById('refresh-btn');btn.disabled=true;
+  await fetchData();renderAll();btn.disabled=false;
+}
+document.addEventListener('visibilitychange',async()=>{if(!document.hidden){await fetchData();renderAll();}});
+setInterval(async()=>{await fetchData();renderAll();},30000);
+
+// ══════════════════════════════════════════════
+//  LOGIN
+// ══════════════════════════════════════════════
+function switchLoginTab(tab){
+  document.querySelectorAll('.login-tab').forEach((t,i)=>t.classList.toggle('active',['project','admin'][i]===tab));
+  document.querySelectorAll('.login-section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('ls-'+tab).classList.add('active');
+  document.getElementById('pin-err').textContent='';
+}
+
+function renderLoginProjectList(){
+  const el=document.getElementById('proj-login-list');
+  if(!D.projects.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);padding:12px 0">등록된 프로젝트가 없습니다. 관리자로 로그인하세요.</div>';return;}
+  el.innerHTML=D.projects.map(p=>{
+    const cnt=D.members.filter(m=>m.projectIds&&m.projectIds.includes(p.id)).length;
+    return`<button class="proj-login-btn" id="plb-${p.id}" onclick="selectLoginProj('${p.id}')">
+      <span class="proj-color-dot" style="background:${p.color}"></span>
+      <span class="proj-login-name">${p.name}</span>
+      <span class="proj-login-count">${cnt}명</span>
+    </button>`;
+  }).join('');
+}
+
+let selectedLoginProj=null;
+function selectLoginProj(id){
+  selectedLoginProj=id;
+  document.querySelectorAll('.proj-login-btn').forEach(b=>b.classList.remove('selected'));
+  const el=document.getElementById('plb-'+id);if(el)el.classList.add('selected');
+  document.getElementById('proj-pin-input').focus();
+}
+
+function loginProject(){
+  if(!selectedLoginProj){document.getElementById('pin-err').textContent='프로젝트를 먼저 선택해주세요';return;}
+  const proj=D.projects.find(p=>p.id===selectedLoginProj);
+  const v=document.getElementById('proj-pin-input').value.trim();
+  if(!proj){document.getElementById('pin-err').textContent='프로젝트를 찾을 수 없습니다';return;}
+  if(v!==proj.pin){document.getElementById('pin-err').textContent='비밀번호가 틀렸습니다';document.getElementById('proj-pin-input').value='';return;}
+  enterApp(proj.id);
+}
+function loginAdmin(){
+  const v = document.getElementById('admin-pin-input').value.trim();
+  const stored = String(D.adminPin||'').trim();
+  const ok = stored.length > 0 && v === stored;
+  if(!ok){
+    document.getElementById('pin-err').textContent = '관리자 비밀번호가 틀렸습니다';
+    document.getElementById('admin-pin-input').value = '';
+    return;
+  }
+  try{ enterApp('admin'); }
+  catch(err){
+    console.error('enterApp error:', err);
+    document.getElementById('pin-err').textContent = '오류: ' + err.message;
+  }
+}
+function enterApp(mode){
+  MODE = mode;
+  const gate = document.getElementById('pin-gate');
+  const app  = document.getElementById('app');
+  if(gate) gate.style.display = 'none';
+  if(app)  app.style.display  = 'block';
+
+  const badge = document.getElementById('mode-badge');
+  const adminBtn = document.getElementById('tab-admin-btn');
+  const addBtn   = document.getElementById('add-member-btn');
+
+  if(mode === 'admin'){
+    if(badge){ badge.textContent = '관리자'; badge.className = 'mode-badge admin'; badge.style.background=''; badge.style.color=''; }
+    if(adminBtn) adminBtn.style.display = '';
+  } else {
+    const proj = (D.projects||[]).find(p=>p.id===mode);
+    if(badge){ badge.textContent = proj ? proj.name : '프로젝트'; badge.className = 'mode-badge project'; badge.style.background = proj ? (proj.color+'22') : ''; badge.style.color = proj ? proj.color : ''; }
+    if(adminBtn) adminBtn.style.display = 'none';
+  }
+  if(addBtn) addBtn.style.display = mode==='admin' ? '' : 'none';
+
+  // 현재 활성 탭 다시 렌더
+  const activeTab = document.querySelector('.tab.active');
+  const tabNames = ['dashboard','calendar','leaves','members','admin'];
+  const idx = [...document.querySelectorAll('.tab')].indexOf(activeTab);
+  const currentTab = (idx >= 0 && tabNames[idx]) ? tabNames[idx] : 'dashboard';
+  // 관리자가 admin탭 없으면 dashboard로
+  const targetTab = (mode !== 'admin' && currentTab === 'admin') ? 'dashboard' : currentTab;
+  go(targetTab);
+}
+function logout(){
+  MODE=null;selectedLoginProj=null;dashFilter='all';
+  document.getElementById('app').style.display='none';
+  document.getElementById('proj-pin-input').value='';
+  document.getElementById('admin-pin-input').value='';
+  document.getElementById('pin-err').textContent='';
+  document.querySelectorAll('.proj-login-btn').forEach(b=>b.classList.remove('selected'));
+  renderLoginProjectList();
+  document.getElementById('pin-gate').style.display='flex';
+  switchLoginTab('project');
+}
+
+// ══════════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════════
+function renderAll(){renderBanner();renderDashboard();}
+function go(tab){
+  const tabs=['dashboard','calendar','leaves','members','admin'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===tab));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  const el=document.getElementById('tab-'+tab);if(el)el.classList.add('active');
+  if(tab==='dashboard')renderDashboard();
+  if(tab==='calendar')renderCalendar();
+  if(tab==='leaves')renderLeaves();
+  if(tab==='members')renderMembers();
+  if(tab==='admin')renderAdmin();
+}
+function cm(id){document.getElementById(id).style.display='none';}
+
+// 프로젝트 색상/이름 헬퍼
+function projById(id){return D.projects.find(p=>p.id===id);}
+function projTagHtml(pid){
+  const p=projById(pid);if(!p)return'';
+  return`<span class="proj-tag" style="background:${p.color}18;color:${p.color}"><span class="proj-dot" style="background:${p.color}"></span>${p.name}</span>`;
+}
+
+function renderBanner(){
+  const sl=D.sharedLeaves,el=document.getElementById('shared-banner');
+  if(!sl.length){
+    el.innerHTML='<div class="shared-banner-head"><div class="shared-banner-title">🤝 공동연차</div><span style="font-size:12px;color:var(--text3)">등록된 공동연차가 없습니다.</span><button class="btn sm purple" onclick="openShared()" style="margin-left:auto">+ 추가</button></div>';
+    return;
+  }
+  el.innerHTML=`
+    <div class="shared-banner-head">
+      <div class="shared-banner-title">🤝 공동연차 <span style="font-weight:400;opacity:.7">총 ${D.sharedLeaves.reduce((s,x)=>s+x.days,0)}일</span></div>
+      <button class="btn sm purple" onclick="openShared()">+ 추가</button>
+    </div>
+    <div class="shared-chips">
+      ${sl.map(s=>{
+        const excN=s.exceptions?s.exceptions.length:0;
+        const dateStr=s.start===s.end?s.start.slice(5).replace('-','/'):s.start.slice(5).replace('-','/')+'→'+s.end.slice(5).replace('-','/');
+        return`<div class="schip">
+          <span class="schip-name">${s.memo||'공동연차'}</span>
+          <span class="schip-date">${dateStr}</span>
+          <span class="schip-days">${s.days}일</span>
+          ${excN?`<span class="exception-badge">+${excN}</span>`:''}
+          <div class="schip-actions">
+            <button class="schip-btn" onclick="openException('${s.id}')" title="출근자 지정">👤</button>
+            <button class="schip-btn" onclick="openEditShared('${s.id}')" title="수정">✏️</button>
+            <button class="schip-del" onclick="delShared('${s.id}')" title="삭제">×</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function renderProjFilterBar(){
+  const el=document.getElementById('proj-filter-bar');
+  if(!el)return;
+  // 관리자 모드에서만 표시
+  if(MODE!=='admin'){el.style.display='none';return;}
+  el.style.display='flex';
+  const projs=D.projects||[];
+  // 각 프로젝트 멤버 수
+  const allCount=D.members.length;
+  el.innerHTML=`
+    <button class="proj-filter-btn all${dashFilter==='all'?' active':''}" onclick="setDashFilter('all')">
+      전체 <span class="proj-filter-count">${allCount}명</span>
+    </button>
+    ${projs.map(p=>{
+      const cnt=D.members.filter(m=>m.projectIds&&m.projectIds.includes(p.id)).length;
+      return`<button class="proj-filter-btn${dashFilter===p.id?' active':''}"
+        style="${dashFilter===p.id?'background:'+p.color+';border-color:'+p.color:''}"
+        onclick="setDashFilter('${p.id}')">
+        <span class="proj-filter-dot" style="background:${p.color};${dashFilter===p.id?'background:#ffffff99':''}"></span>
+        ${p.name} <span class="proj-filter-count">${cnt}명</span>
+      </button>`;
+    }).join('')}`;
+}
+
+function setDashFilter(id){
+  dashFilter=id;
+  renderProjFilterBar();
+  renderDashboard();
+}
+
+function renderDashboard(){
+  renderBanner();
+  renderProjFilterBar();
+  renderMonthlyChart();
+  const vms=visibleMembers();
+  const tUsed=vms.reduce((s,m)=>s+totalUsed(m.id),0);
+  const tAlloc=vms.reduce((s,m)=>s+m.totalDays,0);
+  const avg=tAlloc?Math.round(tUsed/tAlloc*100):0;
+  const tod=new Date().toISOString().slice(0,10);
+  const up=D.leaves.filter(l=>vms.find(m=>m.id===l.memberId)&&l.start>=tod).length+D.sharedLeaves.filter(sl=>sl.start>=tod).length;
+  const projTotal=D.leaves.filter(l=>l.type==='project'&&vms.find(m=>m.id===l.memberId)).reduce((s,l)=>s+l.days,0);
+  document.getElementById('metrics').innerHTML=`
+    <div class="metric"><div class="metric-label">팀원 수</div><div class="metric-val">${vms.length}명</div><div class="metric-sub">${MODE==='admin'?(dashFilter==='all'?'전체 직원':(()=>{const p=D.projects.find(x=>x.id===dashFilter);return p?p.name:'프로젝트';})()):'이 프로젝트'}</div></div>
+    <div class="metric"><div class="metric-label">공동연차</div><div class="metric-val" style="color:var(--purple)">${D.sharedLeaves.length}건</div><div class="metric-sub">${D.sharedLeaves.reduce((s,sl)=>s+sl.days,0)}일</div></div>
+    <div class="metric"><div class="metric-label">평균 사용률</div><div class="metric-val">${avg}%</div></div>
+    <div class="metric"><div class="metric-label">프로젝트 휴가</div><div class="metric-val" style="color:var(--coral)">${projTotal}일</div><div class="metric-sub">연차 차감 없음</div></div>`;
+  if(!vms.length){document.getElementById('member-grid').innerHTML='<div class="empty">팀원이 없습니다</div>';return;}
+  document.getElementById('member-grid').innerHTML=vms.map(m=>{
+    const p=personalDays(m.id),s=sharedDays(m.id),pr=projectDays(m.id),tot=p+s,rem=Math.max(0,m.totalDays-tot);
+    const usedPct=m.totalDays?Math.min(100,Math.round(tot/m.totalDays*100)):0;
+    const c=ac(m.id);
+    const tod2=new Date().toISOString().slice(0,10);
+    const np=[...D.leaves.filter(l=>l.memberId===m.id&&l.start>=tod2),...D.sharedLeaves.filter(sl=>sl.start>=tod2)].sort((a,b)=>a.start.localeCompare(b.start))[0];
+    const projTags=(m.projectIds||[]).map(pid=>projTagHtml(pid)).join('');
+    // 도넛 SVG 계산 (r=34, cx=cy=41)
+    const R=34,CX=41,CY=41,circ=2*Math.PI*R;
+    const pPct=m.totalDays?Math.min(100,p/m.totalDays*100):0;
+    const sPct=m.totalDays?Math.min(100,s/m.totalDays*100):0;
+    const prPct=m.totalDays?Math.min(100,pr/m.totalDays*100):0;
+    const remPct=Math.max(0,100-pPct-sPct-prPct);
+    // strokeDasharray 계산: 각 세그먼트 길이
+    const gap=1.5; // 세그먼트 사이 간격(deg→px)
+    const gPx=gap/100*circ;
+    function seg(pct){return Math.max(0,pct/100*circ-gPx);}
+    const segs=[
+      {color:'var(--blue)',   len:seg(pPct),  off:0},
+      {color:'var(--purple)', len:seg(sPct),  off:pPct/100*circ},
+      {color:'var(--coral)',  len:seg(prPct), off:(pPct+sPct)/100*circ},
+      {color:'var(--bg3)',    len:seg(remPct),off:(pPct+sPct+prPct)/100*circ},
+    ];
+    const circles=segs.map(sg=>sg.len>0.5?
+      `<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="${sg.color}" stroke-width="9"
+        stroke-dasharray="${sg.len} ${circ-sg.len}"
+        stroke-dashoffset="${-sg.off}" stroke-linecap="butt"/>`
+    :'').join('');
+    return`<div class="member-card" id="mcard-${m.id}" onclick="toggleMemberDetail('${m.id}',event)">
+      <div class="mcard-head">
+        <div class="avatar" style="background:${c.bg};color:${c.txt}">${ini(m.name)}</div>
+        <div style="flex:1;min-width:0">
+          <div class="mcard-name">${m.name}</div>
+          <div class="mcard-role">${m.role}</div>
+          ${MODE==='admin'&&dashFilter==='all'&&projTags?`<div class="mcard-projs">${projTags}</div>`:''}
+        </div>
+        ${usedPct>=80?`<span style="flex-shrink:0;background:var(--red-bg);color:var(--red-text);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">${usedPct}%</span>`:''}
+      </div>
+      <div class="mcard-donut-row">
+        <div class="donut-wrap">
+          <svg width="82" height="82" viewBox="0 0 82 82" style="transform:rotate(-90deg)">
+            <circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="var(--bg3)" stroke-width="9"/>
+            ${circles}
+          </svg>
+          <div class="donut-center">
+            <span class="donut-pct" style="color:${usedPct>=80?'var(--red)':usedPct>=50?'var(--amber)':'var(--text)'}">${usedPct}%</span>
+            <span class="donut-lbl">사용</span>
+          </div>
+        </div>
+        <div class="mcard-legend">
+          <div class="mcard-leg-row">
+            <span class="mcard-leg-dot" style="background:var(--bg3);border:1.5px solid var(--border2)"></span>
+            <span class="mcard-leg-label">총 연차</span>
+            <span class="mcard-leg-val">${m.totalDays}<span class="mcard-leg-sub">일</span></span>
+          </div>
+          <div class="mcard-leg-row">
+            <span class="mcard-leg-dot" style="background:var(--blue)"></span>
+            <span class="mcard-leg-label">개인 사용</span>
+            <span class="mcard-leg-val vblue">${p}<span class="mcard-leg-sub">일</span></span>
+          </div>
+          <div class="mcard-leg-row">
+            <span class="mcard-leg-dot" style="background:var(--purple)"></span>
+            <span class="mcard-leg-label">공동 적용</span>
+            <span class="mcard-leg-val vpurple">${s}<span class="mcard-leg-sub">일</span></span>
+          </div>
+          ${pr?`<div class="mcard-leg-row">
+            <span class="mcard-leg-dot" style="background:var(--coral)"></span>
+            <span class="mcard-leg-label">프로젝트</span>
+            <span class="mcard-leg-val vcoral">${pr}<span class="mcard-leg-sub">일</span></span>
+          </div>`:''}
+          <div class="mcard-leg-row">
+            <span class="mcard-leg-dot" style="background:var(--green)"></span>
+            <span class="mcard-leg-label">잔여</span>
+            <span class="mcard-leg-val ${rem<=3?'vred':'vgreen'}">${rem}<span class="mcard-leg-sub">일</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="mcard-next">
+        <span class="mcard-next-icon">${np?'📅':'✓'}</span>
+        <span>${np?(np.memo?`다음: ${np.memo} (${np.start.slice(5).replace('-','/')})`:`다음 연차: ${np.start.slice(5).replace('-','/')}`):'예정된 연차 없음'}</span>
+      </div>
+      <div class="mcd-expand-hint" id="mcard-hint-${m.id}"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="flex-shrink:0"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> 연차 내역 보기</div>
+      <div class="member-card-detail" id="mcard-detail-${m.id}" onclick="event.stopPropagation()">
+        <div class="mcd-summary-row">
+          <div class="mcd-stat"><div class="mcd-stat-num" style="color:var(--blue)">${p}</div><div class="mcd-stat-lbl">개인연차</div></div>
+          <div class="mcd-stat"><div class="mcd-stat-num" style="color:var(--purple)">${s}</div><div class="mcd-stat-lbl">공동연차</div></div>
+          <div class="mcd-stat"><div class="mcd-stat-num" style="color:var(--coral)">${pr}</div><div class="mcd-stat-lbl">프로젝트</div></div>
+          <div class="mcd-stat"><div class="mcd-stat-num" style="color:${rem<=3?'var(--red)':'var(--green)'}">${rem}</div><div class="mcd-stat-lbl">잔여</div></div>
+        </div>
+        <div class="mcd-type-tabs" id="mcd-tabs-${m.id}">
+          <button class="mcd-type-tab active" data-mid="${m.id}" data-t="all" onclick="setMcdTab('${m.id}','all',this)">전체</button>
+          <button class="mcd-type-tab" data-mid="${m.id}" data-t="annual" onclick="setMcdTab('${m.id}','annual',this)">연차</button>
+          <button class="mcd-type-tab" data-mid="${m.id}" data-t="half" onclick="setMcdTab('${m.id}','half',this)">반차</button>
+          <button class="mcd-type-tab" data-mid="${m.id}" data-t="sick" onclick="setMcdTab('${m.id}','sick',this)">병가</button>
+          <button class="mcd-type-tab" data-mid="${m.id}" data-t="project" onclick="setMcdTab('${m.id}','project',this)">프로젝트</button>
+          <button class="mcd-type-tab" data-mid="${m.id}" data-t="shared" onclick="setMcdTab('${m.id}','shared',this)">공동</button>
+        </div>
+        <div class="mcd-list" id="mcd-list-${m.id}"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+//  멤버카드 상세 토글
+// ══════════════════════════════════════════════
+
+// ══════════════════════════════════════════════
+//  멤버카드 상세 토글
+// ══════════════════════════════════════════════
+const _mcdState = {}; // memberId → { open, typeFilter }
+
+function toggleMemberDetail(mid, e){
+  if(e){
+    // 버튼 클릭이면 전파 차단 (이미 detail 내부에서 stopPropagation 처리)
+    const target = e.target;
+    if(target.closest('.member-card-detail')) return;
+  }
+  if(!_mcdState[mid]) _mcdState[mid] = {open:false, typeFilter:'all'};
+  _mcdState[mid].open = !_mcdState[mid].open;
+
+  const detail = document.getElementById('mcard-detail-'+mid);
+  const hint   = document.getElementById('mcard-hint-'+mid);
+  const card   = document.getElementById('mcard-'+mid);
+  if(!detail) return;
+
+  if(_mcdState[mid].open){
+    detail.classList.add('open');
+    if(hint) hint.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="flex-shrink:0;transform:rotate(180deg)"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> 닫기';
+    card.classList.add('expanded');
+    renderMcdList(mid);
+  } else {
+    detail.classList.remove('open');
+    if(hint) hint.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="flex-shrink:0"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> 연차 내역 보기';
+    card.classList.remove('expanded');
+  }
+}
+
+function setMcdTab(mid, type, el){
+  if(!_mcdState[mid]) _mcdState[mid] = {open:true, typeFilter:'all'};
+  _mcdState[mid].typeFilter = type;
+  // 탭 UI 업데이트
+  document.querySelectorAll(`[data-mid="${mid}"]`).forEach(b=>b.classList.toggle('active', b.dataset.t===type));
+  renderMcdList(mid);
+}
+
+function renderMcdList(mid){
+  const listEl = document.getElementById('mcd-list-'+mid);
+  if(!listEl) return;
+  const state = _mcdState[mid] || {typeFilter:'all'};
+  const tf = state.typeFilter;
+
+  const TYPE_LABEL = {annual:'개인연차',half:'반차',sick:'병가',project:'프로젝트',shared:'공동연차'};
+  const TYPE_COLOR = {annual:'var(--blue)',half:'var(--green)',sick:'var(--amber)',project:'var(--coral)',shared:'var(--purple)'};
+  const TYPE_BG    = {annual:'var(--blue-bg)',half:'var(--green-bg)',sick:'var(--amber-bg)',project:'var(--coral-bg)',shared:'var(--purple-bg)'};
+  const TYPE_TXT   = {annual:'var(--blue-text)',half:'var(--green-text)',sick:'var(--amber-text)',project:'var(--coral-text)',shared:'var(--purple-text)'};
+
+  // 개인 연차
+  let items = D.leaves
+    .filter(l => l.memberId === mid && (tf==='all'||tf==='shared'?false:true) && (tf==='all'||l.type===tf))
+    .map(l => ({...l, _src:'personal'}));
+
+  // 공동 연차 (all 또는 shared 탭일 때)
+  if(tf==='all'||tf==='shared'){
+    D.sharedLeaves.forEach(sl => {
+      if(sl.exceptions && sl.exceptions.includes(mid)) return;
+      items.push({id:sl.id, memberId:mid, type:'shared', start:sl.start, end:sl.end, days:sl.days, memo:sl.memo||'공동연차', _src:'shared'});
+    });
+  }
+  // 개인연차를 all 탭에서도 포함
+  if(tf==='all'){
+    // 이미 위에서 false 처리했으므로 다시 합산
+    items = [
+      ...D.leaves.filter(l=>l.memberId===mid).map(l=>({...l,_src:'personal'})),
+      ...D.sharedLeaves.filter(sl=>!(sl.exceptions&&sl.exceptions.includes(mid))).map(sl=>({id:sl.id,memberId:mid,type:'shared',start:sl.start,end:sl.end,days:sl.days,memo:sl.memo||'공동연차',_src:'shared'}))
+    ];
+  }
+
+  items.sort((a,b) => (a.start||'').localeCompare(b.start||''));
+
+  if(!items.length){
+    listEl.innerHTML = '<div class="mcd-empty">해당 연차 기록이 없습니다</div>';
+    return;
+  }
+
+  listEl.innerHTML = items.map(l=>{
+    const type = l.type || 'annual';
+    const color = TYPE_COLOR[type] || 'var(--blue)';
+    const bg    = TYPE_BG[type]    || 'var(--blue-bg)';
+    const txt   = TYPE_TXT[type]   || 'var(--blue-text)';
+    const label = TYPE_LABEL[type] || type;
+    const start = l.start || '';
+    const end   = l.end || l.start || '';
+    const dateDisp = start===end||!end ? start : `${start} ~ ${end.slice(5)}`;
+    const days  = (l.type==='sick') ? '' : (l.days ? `${l.days}일` : '');
+    const memo  = l.memo || '';
+    return`<div class="mcd-row">
+      <div class="mcd-dot" style="background:${color}"></div>
+      <span class="mcd-date">${dateDisp}</span>
+      <span class="mcd-badge" style="background:${bg};color:${txt}">${label}</span>
+      <span class="mcd-memo">${memo}</span>
+      <span class="mcd-days">${days}</span>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+//  월별 연차 그래프
+// ══════════════════════════════════════════════
+function renderMonthlyChart(){
+  const vms=visibleMembers();
+  const el=document.getElementById('monthly-chart-body');
+  if(!el)return;
+  const ML=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  const curM=new Date().getMonth(); // 0-based
+
+  // 월별 데이터 집계
+  const monthly=Array.from({length:12},(_,mi)=>{
+    const ms=`2026-${String(mi+1).padStart(2,'0')}`;
+    // 개인연차 (annual + half, 해당 월에 시작하는 것 기준)
+    const personal=D.leaves.filter(l=>{
+      if(!vms.find(m=>m.id===l.memberId))return false;
+      if(l.type!=='annual'&&l.type!=='half')return false;
+      return l.start.startsWith(ms);
+    }).reduce((s,l)=>s+l.days,0);
+    // 공동연차 (해당 월에 걸치는 것, 1회만 카운트)
+    const shared=D.sharedLeaves.filter(sl=>sl.start.startsWith(ms)||sl.end.startsWith(ms)||
+      (sl.start<=ms+'-31'&&sl.end>=ms+'-01')).reduce((s,sl)=>s+sl.days,0);
+    // 프로젝트 휴가
+    const project=D.leaves.filter(l=>{
+      if(!vms.find(m=>m.id===l.memberId))return false;
+      if(l.type!=='project')return false;
+      return l.start.startsWith(ms);
+    }).reduce((s,l)=>s+l.days,0);
+    return{personal,shared,project,total:personal+shared+project};
+  });
+
+  const maxVal=Math.max(...monthly.map(m=>m.total),1);
+  const CHART_H=110; // px 기준 최대 막대 높이
+
+  el.innerHTML=monthly.map((m,mi)=>{
+    const isCur=mi===curM;
+    const pxP=Math.round(m.personal/maxVal*CHART_H);
+    const pxS=Math.round(m.shared/maxVal*CHART_H);
+    const pxPr=Math.round(m.project/maxVal*CHART_H);
+    const totalLabel=m.total>0?m.total+'일':'';
+    return`<div class="mc-col${isCur?' current':''}"
+      onmouseenter="showMcTooltip(event,${mi},'${ML[mi]}',${m.personal},${m.shared},${m.project})"
+      onmouseleave="hideMcTooltip()">
+      <div class="mc-total">${totalLabel}</div>
+      <div class="mc-bars" style="height:${CHART_H}px">
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;height:100%;width:70%;gap:1px">
+          ${pxP>0?`<div class="mc-bar personal" style="height:${pxP}px;border-radius:${pxS||pxPr?'3px 3px 0 0':'3px'}"></div>`:''}
+          ${pxS>0?`<div class="mc-bar shared" style="height:${pxS}px;border-radius:${pxP&&!pxPr?'0 0 3px 3px':pxPr?'0':'3px'}"></div>`:''}
+          ${pxPr>0?`<div class="mc-bar project" style="height:${pxPr}px;border-radius:${(pxP||pxS)?'0 0 3px 3px':'3px'}"></div>`:''}
+          ${m.total===0?`<div style="height:3px;width:70%;background:var(--border);border-radius:2px;margin-top:auto"></div>`:''}
+        </div>
+      </div>
+      <div class="mc-label">${ML[mi]}</div>
+    </div>`;
+  }).join('');
+}
+
+let mcTooltipEl=null;
+function showMcTooltip(e,mi,label,personal,shared,project){
+  hideMcTooltip();
+  if(personal===0&&shared===0&&project===0)return;
+  const tip=document.createElement('div');
+  tip.className='mc-tooltip';
+  tip.innerHTML=`<div style="font-weight:600;margin-bottom:4px">📅 ${label}</div>`+
+    (personal?`<div><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--blue);margin-right:5px"></span>개인 ${personal}일</div>`:'') +
+    (shared?`<div><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--purple);margin-right:5px"></span>공동 ${shared}일</div>`:'') +
+    (project?`<div><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--coral);margin-right:5px"></span>프로젝트 ${project}일</div>`:'') +
+    `<div style="margin-top:4px;padding-top:4px;border-top:1px solid rgba(255,255,255,.15);font-weight:600">합계 ${personal+shared+project}일</div>`;
+  tip.style.cssText+=';position:fixed;top:'+(e.clientY-10)+'px;left:'+(e.clientX+12)+'px';
+  document.body.appendChild(tip);
+  mcTooltipEl=tip;
+  // 화면 밖으로 나가면 왼쪽에 표시
+  const r=tip.getBoundingClientRect();
+  if(r.right>window.innerWidth-10)tip.style.left=(e.clientX-r.width-12)+'px';
+}
+function hideMcTooltip(){if(mcTooltipEl){mcTooltipEl.remove();mcTooltipEl=null;}}
+
+
+// ── 2026 대한민국 공휴일 ──
+const HOLIDAYS_2026={
+  '2026-01-01':'신정',
+  '2026-02-16':'설날 연휴',
+  '2026-02-17':'설날',
+  '2026-02-18':'설날 연휴',
+  '2026-03-01':'삼일절',
+  '2026-03-02':'대체공휴일(삼일절)',
+  '2026-05-05':'어린이날',
+  '2026-05-24':'부처님오신날',
+  '2026-05-25':'대체공휴일(부처님오신날)',
+  '2026-06-06':'현충일',
+  '2026-07-17':'제헌절',
+  '2026-08-15':'광복절',
+  '2026-08-17':'대체공휴일(광복절)',
+  '2026-09-24':'추석 연휴',
+  '2026-09-25':'추석',
+  '2026-09-26':'추석 연휴',
+  '2026-10-03':'개천절',
+  '2026-10-05':'대체공휴일(개천절)',
+  '2026-10-09':'한글날',
+  '2026-12-25':'크리스마스',
+  // 선거: 2026년 6월 지방선거 예정
+  '2026-06-03':'전국동시지방선거 🗳️',
+};
+
+function renderCalendar(){
+  const m=calMonth,y=2026;
+  const ML=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  document.getElementById('cal-label').textContent=`2026년 ${ML[m]}`;
+  const fd=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate();
+  const tod=new Date(),icm=tod.getFullYear()===y&&tod.getMonth()===m;
+  const vms=visibleMembers();
+  function ld(d){const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;return D.leaves.filter(l=>l.start<=ds&&l.end>=ds&&vms.find(x=>x.id===l.memberId));}
+  function sd(d){const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;return D.sharedLeaves.filter(sl=>sl.start<=ds&&sl.end>=ds);}
+  function hd(d){return HOLIDAYS_2026[`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`]||null;}
+  let h=`<div class="cal-wh">${['일','월','화','수','목','금','토'].map(d=>`<div class="cal-dl">${d}</div>`).join('')}</div><div class="cal-days">`;
+  for(let i=0;i<fd;i++)h+=`<div class="cal-empty"></div>`;
+  for(let d=1;d<=dim;d++){
+    const sl=sd(d),dl=ld(d),dow=new Date(y,m,d).getDay(),holiday=hd(d);
+    const isHoliday=!!holiday;
+    // 날짜 숫자 클래스: today > holiday/sun/sat 순
+    const nc=icm&&d===tod.getDate()?'today':(isHoliday||dow===0)?'holiday sun':dow===6?'sat':'';
+    const cellClass=['cal-cell',sl.length?'sc':'',isHoliday?'holiday-cell':''].filter(Boolean).join(' ');
+    // 연차 표시 개수: 공동연차 있으면 1개, 없으면 2개 (공휴일 있으면 1개 더 줄임)
+    const maxDl=sl.length?0:isHoliday?1:2;
+    h+=`<div class="${cellClass}">
+      <div class="cal-num ${nc}">${d}</div>
+      ${isHoliday?`<div class="cal-ev holiday">🎌 ${holiday}</div>`:''}
+      ${sl.map(s=>`<div class="cal-ev shared">🤝 ${s.memo||'공동'}</div>`).join('')}
+      ${dl.slice(0,maxDl).map(l=>{const mm=vms.find(x=>x.id===l.memberId);return`<div class="cal-ev ${l.type}">${mm?mm.name:''}${l.type==='half'?' (반)':l.type==='project'?' (프)':''}</div>`;}).join('')}
+      ${dl.length>maxDl?`<div class="cal-more">+${dl.length-maxDl}명</div>`:''}
+    </div>`;
+  }
+  h+='</div>';document.getElementById('cal-grid').innerHTML=h;
+}
+function pm(){calMonth=Math.max(0,calMonth-1);renderCalendar();}
+function nm(){calMonth=Math.min(11,calMonth+1);renderCalendar();}
+
+function renderLeaves(){
+  const sm=document.getElementById('fm').value,st=document.getElementById('ft').value;
+  const vms=visibleMembers();
+  const fmEl=document.getElementById('fm'),pv=fmEl.value;
+  fmEl.innerHTML='<option value="">전체 팀원</option>'+vms.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+  fmEl.value=pv;
+  const tl={annual:'개인연차',half:'반차',sick:'병가',project:'프로젝트 휴가'};
+  let rows=[];
+  if(!sm&&(st===''||st==='shared'))D.sharedLeaves.sort((a,b)=>b.start.localeCompare(a.start)).forEach(sl=>rows.push({shared:true,sl}));
+  if(st!=='shared')D.leaves.filter(l=>{
+    if(!vms.find(x=>x.id===l.memberId))return false;
+    if(sm&&l.memberId!==sm)return false;
+    if(st&&l.type!==st)return false;
+    return true;
+  }).sort((a,b)=>b.start.localeCompare(a.start)).forEach(l=>rows.push({shared:false,l}));
+  if(!rows.length){document.getElementById('leaves-table').innerHTML='<div class="empty">해당 연차 기록이 없습니다</div>';return;}
+  document.getElementById('leaves-table').innerHTML=`
+    <div class="table-wrap">
+      <div class="table-head"><span>대상</span><span>기간</span><span>유형</span><span>일수</span><span>메모</span><span></span></div>
+      ${rows.map(r=>{
+        if(r.shared){const sl=r.sl;const excN=sl.exceptions?sl.exceptions.length:0;return`<div class="table-row srow">
+          <span style="display:flex;align-items:center;gap:6px"><span style="width:24px;height:24px;border-radius:50%;background:var(--purple-bg);color:var(--purple-text);display:inline-flex;align-items:center;justify-content:center;font-size:12px">🤝</span><strong style="color:var(--purple-text)">전체 팀원</strong>${excN?`<span style="font-size:11px;background:var(--amber-bg);color:var(--amber-text);padding:1px 6px;border-radius:8px">출근 ${excN}명</span>`:''}</span>
+          <span style="color:var(--text2)">${sl.start===sl.end?sl.start:sl.start+' ~ '+sl.end}</span>
+          <span><span class="badge shared">공동연차</span></span>
+          <span style="font-weight:600;color:var(--purple)">${sl.days}일</span>
+          <span style="color:var(--text2)">${sl.memo||'—'}</span>
+          <span style="text-align:right;display:flex;gap:3px;justify-content:flex-end;flex-wrap:nowrap;align-items:center">
+            <button class="btn sm" onclick="openException('${sl.id}')" style="white-space:nowrap">출근자</button>
+            <button class="btn sm" onclick="openEditShared('${sl.id}')" style="white-space:nowrap">수정</button>
+            <button class="btn sm danger" onclick="delShared('${sl.id}')" style="white-space:nowrap">삭제</button>
+          </span>
+        </div>`;}
+        const l=r.l,mm=vms.find(x=>x.id===l.memberId);if(!mm)return'';const cv=ac(l.memberId);
+        return`<div class="table-row">
+          <span style="display:flex;align-items:center;gap:6px"><span class="avatar" style="width:24px;height:24px;font-size:10px;background:${cv.bg};color:${cv.txt}">${ini(mm.name)}</span>${mm.name}</span>
+          <span style="color:var(--text2)">${l.start===l.end?l.start:l.start+' ~ '+l.end.slice(5)}</span>
+          <span><span class="badge ${l.type}">${tl[l.type]||l.type}</span></span>
+          <span style="font-weight:600">${l.type==='sick'?'—':l.days+'일'}</span>
+          <span style="color:var(--text2)">${l.memo||'—'}</span>
+          <span style="text-align:right;display:flex;gap:3px;justify-content:flex-end;flex-wrap:nowrap;align-items:center">
+            <button class="btn sm" onclick="openEditLeave('${l.id}')" style="white-space:nowrap">수정</button>
+            <button class="btn sm danger" onclick="delLeave('${l.id}')" style="white-space:nowrap">삭제</button>
+          </span>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function renderMembers(){
+  const el=document.getElementById('mmlist');
+  const scopeNote=document.getElementById('members-scope-note');
+  const mfp=document.getElementById('mf-proj');
+  // 프로젝트 필터 셀렉트 채우기
+  const pv=mfp.value;
+  mfp.innerHTML='<option value="">전체 프로젝트</option>'+D.projects.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  mfp.value=pv;
+  const filterProjId=mfp.value;
+  let members=MODE==='admin'?D.members:visibleMembers();
+  if(filterProjId)members=members.filter(m=>m.projectIds&&m.projectIds.includes(filterProjId));
+  scopeNote.textContent=MODE==='admin'?'전체 팀원 관리 (관리자 전용)':`${D.projects.find(p=>p.id===MODE)?.name||''} 프로젝트 팀원`;
+  if(!members.length){el.innerHTML='<div class="empty">팀원이 없습니다</div>';return;}
+  el.innerHTML=members.map((m,i)=>{
+    const p=personalDays(m.id),s=sharedDays(m.id),t=p+s,cv=ac(m.id);
+    const allMembers=MODE==='admin'?D.members:visibleMembers();
+    const realIdx=allMembers.findIndex(x=>x.id===m.id);
+    const isFirst=realIdx===0,isLast=realIdx===allMembers.length-1;
+    const projTags=(m.projectIds||[]).map(pid=>projTagHtml(pid)).join('');
+    return`<div class="mmrow" id="mmrow-${m.id}" draggable="${MODE==='admin'?'true':'false'}"
+      ondragstart="dragStart(event,'${m.id}')"
+      ondragover="dragOver(event,'${m.id}')"
+      ondragleave="dragLeave(event,'${m.id}')"
+      ondrop="dragDrop(event,'${m.id}')">
+      ${MODE==='admin'?`<div class="drag-handle" title="순서 변경"><span></span><span></span><span></span></div>
+      <div class="order-btns">
+        <button class="order-btn" onclick="moveMember('${m.id}',-1)" ${isFirst?'disabled':''}>▲</button>
+        <button class="order-btn" onclick="moveMember('${m.id}',1)" ${isLast?'disabled':''}>▼</button>
+      </div>`:''}
+      <div class="avatar" style="background:${cv.bg};color:${cv.txt}">${ini(m.name)}</div>
+      <div class="mmrow-info">
+        <div class="mmrow-name">${m.name}</div>
+        <div class="mmrow-meta">${m.role} · 총 ${m.totalDays}일 · 사용 ${t}일 · 잔여 ${Math.max(0,m.totalDays-t)}일${m.joinDate?` · 입사 ${m.joinDate.slice(0,7)}`:''}${m.joinDate?(() => { const res=calcAnnualLeave(m.joinDate,new Date().getFullYear()); return ` · 자동계산 ${res.days}일`; })():''}</div>
+        ${projTags?`<div class="mmrow-tags">${projTags}</div>`:''}
+      </div>
+      ${MODE==='admin'?`<div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn sm" onclick="openEditMember('${m.id}')">수정</button>
+        <button class="btn sm danger" onclick="delMember('${m.id}')">삭제</button>
+      </div>`:''}
+    </div>`;
+  }).join('');
+}
+
+let projDragSrcId=null;
+
+function renderAdmin(){
+  const pg=document.getElementById('proj-grid');
+  if(!D.projects.length){pg.innerHTML='<div class="empty">등록된 프로젝트가 없습니다</div>';return;}
+  pg.innerHTML=D.projects.map(p=>{
+    const cnt=D.members.filter(m=>m.projectIds&&m.projectIds.includes(p.id)).length;
+    return`<div class="proj-card" id="pcard-${p.id}" draggable="true"
+      ondragstart="projDragStart(event,'${p.id}')"
+      ondragover="projDragOver(event,'${p.id}')"
+      ondragleave="projDragLeave(event,'${p.id}')"
+      ondrop="projDragDrop(event,'${p.id}')">
+      <div class="proj-drag-handle" title="드래그하여 순서 변경"><span></span><span></span><span></span></div>
+      <div class="proj-card-head">
+        <div class="proj-color-big" style="background:${p.color}"></div>
+        <div>
+          <div class="proj-card-name">${p.name}</div>
+          <div class="proj-card-meta">${cnt}명 소속</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text3)">비밀번호: ${'•'.repeat(p.pin.length)}</div>
+      <div class="proj-card-actions">
+        <button class="btn sm" onclick="openEditProject('${p.id}')">수정</button>
+        <button class="btn sm danger" onclick="delProject('${p.id}')">삭제</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function projDragStart(e,id){
+  projDragSrcId=id;
+  e.dataTransfer.effectAllowed='move';
+  setTimeout(()=>document.getElementById('pcard-'+id)?.classList.add('dragging'),0);
+}
+function projDragOver(e,id){
+  e.preventDefault();e.dataTransfer.dropEffect='move';
+  if(id===projDragSrcId)return;
+  document.querySelectorAll('.proj-card').forEach(c=>c.classList.remove('drag-over'));
+  document.getElementById('pcard-'+id)?.classList.add('drag-over');
+}
+function projDragLeave(e,id){
+  document.getElementById('pcard-'+id)?.classList.remove('drag-over');
+}
+async function projDragDrop(e,tgtId){
+  e.preventDefault();
+  document.querySelectorAll('.proj-card').forEach(c=>{c.classList.remove('dragging');c.classList.remove('drag-over');});
+  if(!projDragSrcId||projDragSrcId===tgtId){projDragSrcId=null;return;}
+  const si=D.projects.findIndex(p=>p.id===projDragSrcId);
+  const ti=D.projects.findIndex(p=>p.id===tgtId);
+  if(si<0||ti<0){projDragSrcId=null;return;}
+  const [moved]=D.projects.splice(si,1);
+  D.projects.splice(ti,0,moved);
+  projDragSrcId=null;
+  renderAdmin();renderLoginProjectList();
+  await saveData();
+  toast('프로젝트 순서가 변경되었습니다');
+}
+
+// ══════════════════════════════════════════════
+//  공동연차
+// ══════════════════════════════════════════════
+function openShared(){
+  document.getElementById('shared-modal-title').textContent='🤝 공동연차 등록';
+  document.getElementById('sl-edit-id').value='';
+  const today=new Date().toISOString().slice(0,10);
+  document.getElementById('ss').value=today;document.getElementById('se').value=today;
+  document.getElementById('sm').value='';upSP();
+  document.getElementById('modal-shared').style.display='block';
+}
+function openEditShared(id){
+  const sl=D.sharedLeaves.find(x=>x.id===id);if(!sl)return;
+  document.getElementById('shared-modal-title').textContent='🤝 공동연차 수정';
+  document.getElementById('sl-edit-id').value=id;
+  document.getElementById('ss').value=sl.start;document.getElementById('se').value=sl.end;
+  document.getElementById('sm').value=sl.memo||'';upSP();
+  document.getElementById('modal-shared').style.display='block';
+}
+function upSP(){
+  const s=document.getElementById('ss').value,e=document.getElementById('se').value;
+  if(s>e)document.getElementById('se').value=s;
+  document.getElementById('sp').textContent=`영업일 기준 ${biz(s,e||s)}일 · 현재 보이는 팀원 ${visibleMembers().length}명 적용`;
+}
+async function submitShared(){
+  const start=document.getElementById('ss').value,end=document.getElementById('se').value||start;
+  const memo=document.getElementById('sm').value.trim(),editId=document.getElementById('sl-edit-id').value;
+  if(!start){alert('날짜를 입력해주세요');return;}
+  const days=biz(start,end);
+  if(editId){const sl=D.sharedLeaves.find(x=>x.id===editId);if(sl){sl.start=start;sl.end=end;sl.memo=memo||'공동연차';sl.days=days;}}
+  else D.sharedLeaves.push({id:'sl'+Date.now(),start,end,memo:memo||'공동연차',days,exceptions:[]});
+  cm('modal-shared');renderAll();await saveData();
+}
+async function delShared(id){
+  const sl=D.sharedLeaves.find(x=>x.id===id);
+  if(!confirm(`"${sl?.memo||'공동연차'}"을 삭제할까요?`))return;
+  D.sharedLeaves=D.sharedLeaves.filter(x=>x.id!==id);renderAll();await saveData();
+}
+
+function openException(slId){
+  const sl=D.sharedLeaves.find(x=>x.id===slId);if(!sl)return;
+  if(!sl.exceptions)sl.exceptions=[];
+  excTargetId=slId;
+  const vms=visibleMembers();
+  document.getElementById('exc-info').innerHTML=`<strong>${sl.memo||'공동연차'}</strong> (${sl.start}${sl.start!==sl.end?' ~ '+sl.end:''} · ${sl.days}일)<br>출근한 팀원을 체크하면 연차가 차감되지 않습니다.`;
+  document.getElementById('exc-member-list').innerHTML=vms.map(m=>{
+    const checked=sl.exceptions.includes(m.id),cv=ac(m.id);
+    return`<label class="member-check-item${checked?' checked':''}" id="excitem-${m.id}">
+      <input type="checkbox" value="${m.id}" ${checked?'checked':''} onchange="toggleExcItem(this,'${m.id}')">
+      <div class="avatar" style="width:28px;height:28px;font-size:11px;background:${cv.bg};color:${cv.txt}">${ini(m.name)}</div>
+      <span style="font-size:13px;font-weight:500">${m.name}</span>
+      <span style="font-size:12px;color:var(--text3)">${m.role}</span>
+    </label>`;
+  }).join('');
+  document.getElementById('modal-exception').style.display='block';
+}
+function toggleExcItem(cb,mid){document.getElementById('excitem-'+mid)?.classList.toggle('checked',cb.checked);}
+async function submitException(){
+  const sl=D.sharedLeaves.find(x=>x.id===excTargetId);if(!sl)return;
+  sl.exceptions=[...document.querySelectorAll('#exc-member-list input:checked')].map(c=>c.value);
+  cm('modal-exception');renderAll();await saveData();
+  toast(sl.exceptions.length?`출근자 ${sl.exceptions.length}명 지정 완료`:'전원 연차 차감');
+}
+
+// ══════════════════════════════════════════════
+//  개인연차
+// ══════════════════════════════════════════════
+function openLeave(){
+  const vms=visibleMembers();
+  document.getElementById('leave-modal-title').textContent='연차 / 휴가 등록';
+  document.getElementById('leave-edit-id').value='';
+  document.getElementById('leave-submit-btn').textContent='등록';
+  document.getElementById('lm').innerHTML=vms.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+  document.getElementById('lt').value='annual';
+  const _td=new Date().toISOString().slice(0,10);
+  document.getElementById('ls').value=_td;document.getElementById('le').value=_td;
+  document.getElementById('lmemo').value='';upLF();
+  document.getElementById('modal-leave').style.display='block';
+}
+function openEditLeave(id){
+  const l=D.leaves.find(x=>x.id===id);if(!l)return;
+  const vms=visibleMembers();
+  document.getElementById('leave-modal-title').textContent='연차 / 휴가 수정';
+  document.getElementById('leave-edit-id').value=id;
+  document.getElementById('leave-submit-btn').textContent='저장';
+  document.getElementById('lm').innerHTML=vms.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+  document.getElementById('lm').value=l.memberId;
+  document.getElementById('lt').value=l.type;
+  document.getElementById('ls').value=l.start;
+  document.getElementById('le').value=l.end;
+  document.getElementById('lmemo').value=l.memo||'';
+  upLF();
+  document.getElementById('modal-leave').style.display='block';
+}
+function upLE(){const s=document.getElementById('ls').value,e=document.getElementById('le').value;if(s>e)document.getElementById('le').value=s;upLF();}
+function upLF(){
+  const t=document.getElementById('lt').value,s=document.getElementById('ls').value,e=document.getElementById('le').value;
+  document.getElementById('le-group').style.display=t==='half'?'none':'block';
+  const bd=biz(s,e||s);
+  const msg={annual:`연차: ${bd}일 차감`,half:'반차: 0.5일 차감',sick:`병가: ${bd}일 (연차 차감 없음)`,project:`프로젝트 휴가: ${bd}일 (연차 차감 없음)`};
+  document.getElementById('lp').textContent=msg[t]||'';
+}
+async function submitLeave(){
+  const mid=document.getElementById('lm').value,t=document.getElementById('lt').value;
+  const s=document.getElementById('ls').value,e=t==='half'?s:document.getElementById('le').value;
+  const memo=document.getElementById('lmemo').value;
+  const editId=document.getElementById('leave-edit-id').value;
+  if(!mid||!s){alert('필수 항목을 입력해주세요');return;}
+  const bd=biz(s,e),days=t==='half'?0.5:(t==='sick'||t==='project')?0:bd;
+  const m=D.members.find(x=>x.id===mid);
+  const storeDays=t==='sick'?0:t==='project'?bd:days;
+  if(editId){
+    // 수정 모드: 기존 연차 일수 제외하고 잔여 계산
+    const orig=D.leaves.find(x=>x.id===editId);
+    if(t==='annual'||t==='half'){
+      const uWithoutThis=totalUsed(mid)-(orig&&(orig.type==='annual'||orig.type==='half')?orig.days:0);
+      if(uWithoutThis+days>m.totalDays){if(!confirm(`${m.name}님 잔여 연차(${m.totalDays-uWithoutThis}일) 초과. 저장하시겠습니까?`))return;}
+    }
+    if(orig){orig.memberId=mid;orig.type=t;orig.start=s;orig.end=e;orig.memo=memo;orig.days=storeDays;}
+    toast('연차가 수정되었습니다');
+  } else {
+    if(t==='annual'||t==='half'){const u=totalUsed(mid);if(u+days>m.totalDays){if(!confirm(`${m.name}님 잔여 연차(${m.totalDays-u}일) 초과. 등록하시겠습니까?`))return;}}
+    D.leaves.push({id:'l'+Date.now(),memberId:mid,type:t,start:s,end:e,memo,days:storeDays});
+  }
+  cm('modal-leave');renderDashboard();
+  if(document.getElementById('tab-leaves').classList.contains('active'))renderLeaves();
+  await saveData();
+}
+async function delLeave(id){
+  if(!confirm('삭제할까요?'))return;
+  D.leaves=D.leaves.filter(l=>l.id!==id);renderLeaves();renderDashboard();await saveData();
+}
+
+// ══════════════════════════════════════════════
+//  연차 자동계산 (입사일 기준)
+// ══════════════════════════════════════════════
+/*
+  [계산 원칙 - 입사일 기준]
+  1) 입사 당해연도: 매 1개월 만근 시 익월 1일 (최대 11일, 당해연도만 특례)
+  2) 만 1년 이상: 입사일 기준 갱신
+     - 만1년~만2년: 15일
+     - 만3년 이상: 15 + floor((만N년-1)/2), 최대 25일
+     → 만3년=16, 만5년=17, 만7년=18 ... 만21년+=25
+
+  [입사일 기준 "현재 유효 연차" 계산]
+  - 오늘 날짜 기준으로 "현재 몇 번째 연차 사이클인가" 판단
+  - 예) 22.03.10 입사, 오늘 26.04.21
+    → 26.03.10에 만4년 갱신 → 현재 사이클: 만4년 → 16일
+*/
+function calcAnnualLeave(joinDateStr, targetYear) {
+  if (!joinDateStr) return { days: 15, detail: null };
+  const yr = targetYear || new Date().getFullYear();
+  const join = new Date(joinDateStr + 'T00:00:00');
+
+  // ── 케이스 1: 입사 당해연도 ──
+  if (join.getFullYear() === yr) {
+    const joinMonth = join.getMonth(); // 0-based
+    const days = Math.max(0, 11 - joinMonth);
+    return {
+      days,
+      type: 'first_year',
+      detail: `입사 당해연도(${yr}) · ${joinMonth+1}월 입사 → 익월부터 연말까지 월 1일씩 최대 ${days}일`
+    };
+  }
+
+  // ── 케이스 2: 입사 다음해 이후 ──
+  // 해당 연도 안에 도달하는 최대 만N년 기념일 계산
+  // (예: 22.03.10 입사, 2025년 → 25.03.10 = 만3년 기념일이 2025년 안에 있음)
+  function anniversary(n) {
+    // 입사일 기준 만n년 기념일
+    const d = new Date(join);
+    d.setFullYear(join.getFullYear() + n);
+    return d;
+  }
+
+  // 해당 연도 1/1~12/31 사이에 있는 최고 기념일 찾기
+  let maxFullYears = 0;
+  for (let n = 1; n <= 40; n++) {
+    const ann = anniversary(n);
+    if (ann.getFullYear() === yr) {
+      maxFullYears = n; // 같은 연도에 여러 기념일은 없으므로 1개만 해당
+      break;
+    } else if (ann.getFullYear() > yr) {
+      // 이 연도에 기념일 없음 → 직전 기념일(n-1년) 기준
+      maxFullYears = n - 1;
+      break;
+    }
+  }
+
+  // 아직 만 1년도 안 된 경우 (입사년도 다음해이지만 기념일이 아직 안 지남)
+  // → 전년도 입사, 당해연도 중 만1년이 되는 경우
+  if (maxFullYears < 1) {
+    // 만 1년 기념일이 올해 안에 있는지 확인
+    const ann1 = anniversary(1);
+    if (ann1.getFullYear() === yr) {
+      maxFullYears = 1;
+    } else {
+      // 입사 2년차이지만 기념일이 내년 → 전년 월차 이어받음
+      // 실무상 15일로 처리 (이미 월차 11일 이후 만1년 15일로 대체됨)
+      maxFullYears = 0;
+    }
+  }
+
+  if (maxFullYears === 0) {
+    // 기념일이 다음해에 있음 (입사년도 익년, 기념일 미도달)
+    // 전년도 발생한 월차(최대11일)가 있으나 실무상 15일 미만이면 15일로 올림 없음
+    // → 월차 발생분 계산
+    const joinMonth = join.getMonth();
+    const days = Math.max(0, 11 - joinMonth);
+    return {
+      days,
+      type: 'first_year_carry',
+      detail: `입사 익년(만1년 미도달) · 전년도 월차 최대 ${days}일 (만1년 기념일: ${anniversary(1).toLocaleDateString('ko-KR')})`
+    };
+  }
+
+  // ── 일반 연차 계산 ──
+  // maxFullYears 기준으로 연차 산정
+  let days = 15;
+  let bonus = 0;
+  if (maxFullYears >= 3) {
+    // 근로기준법 제60조 4항:
+    // 최초 1년을 초과하는 매 2년에 대해 1일 가산
+    // 만3년=floor((3-1)/2)=1 → 16일
+    // 만5년=floor((5-1)/2)=2 → 17일
+    // 만7년=3 → 18일 ...
+    bonus = Math.floor((maxFullYears - 1) / 2);
+    days = Math.min(25, 15 + bonus);
+  }
+
+  // 기념일이 당해연도에 있는지 여부
+  const anniv = anniversary(maxFullYears);
+  const annivInThisYear = anniv.getFullYear() === yr;
+  const annivStr = anniv.toLocaleDateString('ko-KR', {month:'long',day:'numeric'});
+
+  let detail = '';
+  if (maxFullYears >= 3) {
+    detail = `만 ${maxFullYears}년 (기념일: ${annivStr}) · 기본 15일 + 가산 ${bonus}일 = ${days}일${days===25?' ✓최대한도':''}`;
+  } else {
+    detail = `만 ${maxFullYears}년 (기념일: ${annivStr}) · 기본 15일`;
+  }
+
+  return { days, type: maxFullYears >= 3 ? 'senior' : 'normal', fullYears: maxFullYears, bonus, annivInThisYear, detail };
+}
+
+let _calcedDays = null;
+
+function calcLeavePreview() {
+  const joinDate = document.getElementById('mm-joindate').value;
+  const previewBox = document.getElementById('leave-preview-box');
+  const applyBtn = document.getElementById('apply-calc-btn');
+  if (!joinDate) {
+    previewBox.style.display = 'none';
+    applyBtn.style.display = 'none';
+    _calcedDays = null;
+    return;
+  }
+  const yr = new Date().getFullYear();
+  const result = calcAnnualLeave(joinDate, yr);
+  _calcedDays = result.days;
+
+  // 근속 표시
+  const join = new Date(joinDate + 'T00:00:00');
+  const now = new Date();
+  let totalMonths = (now.getFullYear() - join.getFullYear()) * 12 + (now.getMonth() - join.getMonth());
+  if (now.getDate() < join.getDate()) totalMonths--;
+  const yrs = Math.floor(totalMonths / 12);
+  const mos = totalMonths % 12;
+  const tenure = yrs > 0 ? `${yrs}년 ${mos}개월` : `${mos}개월`;
+
+  // 향후 3년 미리보기
+  const futureRows = [yr, yr+1, yr+2].map(y => {
+    const r = calcAnnualLeave(joinDate, y);
+    return `<span style="opacity:.7">${y}년</span> <strong>${r.days}일</strong>`;
+  }).join(' &nbsp;→&nbsp; ');
+
+  previewBox.style.display = 'block';
+  applyBtn.style.display = 'inline-flex';
+  previewBox.innerHTML =
+    `<div style="font-weight:600;color:var(--blue-text);margin-bottom:6px">📋 연차 자동계산 (근로기준법)</div>` +
+    `<div style="margin-bottom:4px">입사일 <strong>${joinDate}</strong> · 현재 근속 <strong>${tenure}</strong></div>` +
+    `<div style="background:var(--bg);border-radius:6px;padding:8px 12px;font-size:12px;line-height:1.9;margin-bottom:6px">${result.detail}</div>` +
+    `<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">` +
+    `<div>${yr}년 발생: <strong style="color:var(--blue-text);font-size:16px">${result.days}일</strong></div>` +
+    `<div style="font-size:11px;color:var(--text2)">${futureRows}</div>` +
+    `</div>`;
+}
+
+function applyCalcDays() {
+  if (_calcedDays !== null) {
+    document.getElementById('mm-days').value = _calcedDays;
+    toast(`연차 ${_calcedDays}일 자동 적용됨`);
+  }
+}
+
+// ══════════════════════════════════════════════
+//  팀원 관리
+// ══════════════════════════════════════════════
+function openMember(){
+  document.getElementById('member-modal-title').textContent='팀원 추가';
+  document.getElementById('mm-id').value='';
+  document.getElementById('mm-name').value='';
+  document.getElementById('mm-role').value='';
+  document.getElementById('mm-days').value='15';
+  document.getElementById('mm-joindate').value='';
+  document.getElementById('leave-preview-box').style.display='none';
+  document.getElementById('apply-calc-btn').style.display='none';
+  _calcedDays=null;
+  renderProjCheckList([]);
+  document.getElementById('mm-info').style.display='none';
+  document.getElementById('modal-member').style.display='block';
+}
+function openEditMember(id){
+  const m=D.members.find(x=>x.id===id);if(!m)return;
+  document.getElementById('member-modal-title').textContent='팀원 정보 수정';
+  document.getElementById('mm-id').value=id;
+  document.getElementById('mm-name').value=m.name;
+  document.getElementById('mm-role').value=m.role;
+  document.getElementById('mm-days').value=m.totalDays;
+  document.getElementById('mm-joindate').value=m.joinDate||'';
+  _calcedDays=null;
+  if(m.joinDate) calcLeavePreview();
+  renderProjCheckList(m.projectIds||[]);
+  const p=personalDays(id),s=sharedDays(id),used=p+s;
+  const infoEl=document.getElementById('mm-info');
+  // 입사일 있으면 근속 정보도 표시
+  let joinInfo='';
+  if(m.joinDate){
+    const res=calcAnnualLeave(m.joinDate, new Date().getFullYear());
+    joinInfo=` · 자동계산 <strong>${res.days}일</strong>`;
+  }
+  infoEl.innerHTML=`현재 사용 <strong>${used}일</strong> (개인 ${p}일 + 공동 ${s}일) · 잔여 <strong>${Math.max(0,m.totalDays-used)}일</strong>${joinInfo}`;
+  infoEl.style.display='block';
+  document.getElementById('modal-member').style.display='block';
+}
+function renderProjCheckList(selected){
+  document.getElementById('mm-proj-list').innerHTML=D.projects.map(p=>{
+    const checked=selected.includes(p.id);
+    return`<label class="proj-check-item${checked?' checked':''}" id="pci-${p.id}">
+      <input type="checkbox" value="${p.id}" ${checked?'checked':''} onchange="this.closest('label').classList.toggle('checked',this.checked)">
+      <span class="proj-dot" style="background:${p.color};width:10px;height:10px;border-radius:50%;display:inline-block"></span>
+      <span style="font-size:13px;font-weight:500">${p.name}</span>
+    </label>`;
+  }).join('');
+}
+async function submitMember(){
+  const name=document.getElementById('mm-name').value.trim(),role=document.getElementById('mm-role').value.trim();
+  const td=parseInt(document.getElementById('mm-days').value)||15;
+  const joinDate=document.getElementById('mm-joindate').value||'';
+  const editId=document.getElementById('mm-id').value;
+  if(!name){alert('이름을 입력해주세요');return;}
+  const projectIds=[...document.querySelectorAll('#mm-proj-list input:checked')].map(c=>c.value);
+  if(editId){
+    const m=D.members.find(x=>x.id===editId);
+    if(!m)return;
+    const used=totalUsed(editId);
+    if(td<used&&!confirm(`연차 일수(${td}일)가 사용한 일수(${used}일)보다 적습니다. 계속하시겠습니까?`))return;
+    m.name=name;m.role=role||'팀원';m.totalDays=td;m.projectIds=projectIds;
+    m.joinDate=joinDate;
+  } else {
+    D.members.push({id:'m'+Date.now(),name,role:role||'팀원',totalDays:td,projectIds,joinDate});
+  }
+  cm('modal-member');renderMembers();renderDashboard();await saveData();
+}
+async function delMember(id){
+  const m=D.members.find(x=>x.id===id);
+  if(!confirm(`${m?.name} 팀원과 관련 연차를 모두 삭제할까요?`))return;
+  D.members=D.members.filter(x=>x.id!==id);D.leaves=D.leaves.filter(l=>l.memberId!==id);
+  renderMembers();renderDashboard();await saveData();
+}
+
+// 순서 변경
+async function moveMember(id,dir){
+  const idx=D.members.findIndex(m=>m.id===id),ni=idx+dir;
+  if(ni<0||ni>=D.members.length)return;
+  [D.members[idx],D.members[ni]]=[D.members[ni],D.members[idx]];
+  renderMembers();renderDashboard();await saveData();
+}
+function dragStart(e,id){dragSrcId=id;e.dataTransfer.effectAllowed='move';setTimeout(()=>document.getElementById('mmrow-'+id)?.classList.add('dragging'),0);}
+function dragOver(e,id){e.preventDefault();if(id===dragSrcId)return;document.querySelectorAll('.mmrow').forEach(r=>r.classList.remove('drag-over'));document.getElementById('mmrow-'+id)?.classList.add('drag-over');}
+function dragLeave(e,id){document.getElementById('mmrow-'+id)?.classList.remove('drag-over');}
+async function dragDrop(e,tgtId){
+  e.preventDefault();document.querySelectorAll('.mmrow').forEach(r=>{r.classList.remove('dragging');r.classList.remove('drag-over');});
+  if(!dragSrcId||dragSrcId===tgtId){dragSrcId=null;return;}
+  const si=D.members.findIndex(m=>m.id===dragSrcId),ti=D.members.findIndex(m=>m.id===tgtId);
+  if(si<0||ti<0){dragSrcId=null;return;}
+  const [mv]=D.members.splice(si,1);D.members.splice(ti,0,mv);
+  dragSrcId=null;renderMembers();renderDashboard();await saveData();
+}
+
+// ══════════════════════════════════════════════
+//  프로젝트 관리 (관리자 전용)
+// ══════════════════════════════════════════════
+let selectedColor=PROJ_COLORS[0];
+function renderColorPicker(current){
+  selectedColor=current||PROJ_COLORS[0];
+  document.getElementById('color-picker').innerHTML=PROJ_COLORS.map(c=>
+    `<div class="color-swatch${c===selectedColor?' selected':''}" style="background:${c}" onclick="pickColor('${c}')" title="${c}"></div>`
+  ).join('');
+}
+function pickColor(c){
+  selectedColor=c;
+  document.querySelectorAll('.color-swatch').forEach(s=>{s.classList.toggle('selected',s.style.background===c||s.title===c);});
+}
+
+function openAddProject(){
+  document.getElementById('proj-modal-title').textContent='프로젝트 추가';
+  document.getElementById('pm-id').value='';
+  document.getElementById('pm-name').value='';
+  document.getElementById('pm-pin').value='';document.getElementById('pm-pin2').value='';
+  renderColorPicker(null);
+  document.getElementById('modal-project').style.display='block';
+}
+function openEditProject(id){
+  const p=D.projects.find(x=>x.id===id);if(!p)return;
+  document.getElementById('proj-modal-title').textContent='프로젝트 수정';
+  document.getElementById('pm-id').value=id;
+  document.getElementById('pm-name').value=p.name;
+  document.getElementById('pm-pin').value='';document.getElementById('pm-pin2').value='';
+  renderColorPicker(p.color);
+  document.getElementById('modal-project').style.display='block';
+}
+async function submitProject(){
+  const name=document.getElementById('pm-name').value.trim();
+  const pin=document.getElementById('pm-pin').value.trim();
+  const pin2=document.getElementById('pm-pin2').value.trim();
+  const editId=document.getElementById('pm-id').value;
+  if(!name){alert('프로젝트명을 입력해주세요');return;}
+  if(!editId&&!pin){alert('비밀번호를 입력해주세요');return;}
+  if(pin&&pin!==pin2){alert('비밀번호가 일치하지 않습니다');return;}
+  if(pin&&pin.length<4){alert('비밀번호는 4자리 이상이어야 합니다');return;}
+  if(editId){
+    const p=D.projects.find(x=>x.id===editId);if(!p)return;
+    p.name=name;p.color=selectedColor;if(pin)p.pin=pin;
+  } else {
+    D.projects.push({id:'p'+Date.now(),name,pin,color:selectedColor});
+  }
+  cm('modal-project');renderAdmin();renderLoginProjectList();await saveData();
+  toast(editId?'프로젝트가 수정되었습니다':'프로젝트가 추가되었습니다');
+}
+async function delProject(id){
+  const p=D.projects.find(x=>x.id===id);
+  if(!confirm(`"${p?.name}" 프로젝트를 삭제할까요?\n팀원들의 소속 정보에서도 제거됩니다.`))return;
+  D.projects=D.projects.filter(x=>x.id!==id);
+  D.members.forEach(m=>{if(m.projectIds)m.projectIds=m.projectIds.filter(pid=>pid!==id);});
+  renderAdmin();renderLoginProjectList();await saveData();
+}
+async function changeAdminPin(){
+  const v=document.getElementById('new-admin-pin').value.trim();
+  if(!v||v.length<4){alert('4자리 이상 입력해주세요');return;}
+  D.adminPin=v;await saveData();
+  document.getElementById('new-admin-pin').value='';
+  alert('관리자 비밀번호가 변경되었습니다.');
+}
+
+// ══════════════════════════════════════════════
+//  엑셀 다운로드
+// ══════════════════════════════════════════════
+function exportExcel(){
+  const vms=visibleMembers();
+  const rows=[['이름','직책','소속 프로젝트','유형','시작일','종료일','일수','메모','비고']];
+  const tl={annual:'개인연차',half:'반차',sick:'병가',project:'프로젝트 휴가'};
+  D.sharedLeaves.forEach(sl=>{
+    vms.forEach(m=>{
+      const isExc=sl.exceptions&&sl.exceptions.includes(m.id);
+      const projs=(m.projectIds||[]).map(pid=>D.projects.find(p=>p.id===pid)?.name||'').join(', ');
+      rows.push([m.name,m.role,projs,'공동연차',sl.start,sl.end,isExc?0:sl.days,sl.memo,isExc?'출근(차감없음)':'전체적용']);
+    });
+  });
+  D.leaves.filter(l=>vms.find(x=>x.id===l.memberId)).forEach(l=>{
+    const m=vms.find(x=>x.id===l.memberId);if(!m)return;
+    const projs=(m.projectIds||[]).map(pid=>D.projects.find(p=>p.id===pid)?.name||'').join(', ');
+    rows.push([m.name,m.role,projs,tl[l.type]||l.type,l.start,l.end,l.type==='sick'?0:l.days,l.memo||'','']);
+  });
+  const summary=[['이름','직책','소속 프로젝트','총 연차','개인연차 사용','공동연차 적용','프로젝트 휴가','잔여']];
+  vms.forEach(m=>{
+    const p=personalDays(m.id),s=sharedDays(m.id),pr=projectDays(m.id),rem=Math.max(0,m.totalDays-(p+s));
+    const projs=(m.projectIds||[]).map(pid=>D.projects.find(x=>x.id===pid)?.name||'').join(', ');
+    summary.push([m.name,m.role,projs,m.totalDays,p,s,pr,rem]);
+  });
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'연차 목록');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(summary),'팀원 요약');
+  XLSX.writeFile(wb,'팀연차_2026_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  toast('엑셀 다운로드 완료');
+}
+
+// ── 관리자 비번 강제 초기화 ──
+async function resetAdminPin(){
+  if(!confirm('관리자 비밀번호를 admin1234로 초기화할까요?'))return;
+  D.adminPin='admin1234';
+  try{
+    await fetch('api.php?action=save',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({adminPin:'admin1234',projects:D.projects,members:D.members,leaves:D.leaves,sharedLeaves:D.sharedLeaves})});
+    document.getElementById('pin-err').textContent='';
+    alert('초기화 완료! admin1234로 로그인하세요.');
+  }catch(e){
+    D.adminPin='admin1234'; // 서버 실패해도 메모리엔 적용
+    alert('초기화 완료 (서버 저장 실패 — 이 세션에서는 admin1234 사용 가능)');
+  }
+}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+async function init(){
+  document.getElementById('loading').style.display='flex';
+  const ok=await fetchData();
+
+  // ⚠️ 안전장치: 서버 통신 성공했을 때만 기본데이터 보충 (실패 시 절대 덮어쓰지 않음)
+  if(ok && (!D.projects || !D.projects.length)){
+    // DB가 완전히 비어있는 최초 1회만 기본 구조 삽입
+    D.projects=JSON.parse(JSON.stringify(defaultD.projects));
+    if(!D.adminPin) D.adminPin='admin1234';
+    // 멤버·연차는 절대 defaultD로 채우지 않음 (실데이터 보호)
+    if(!D.members) D.members=[];
+    if(!D.leaves) D.leaves=[];
+    if(!D.sharedLeaves) D.sharedLeaves=[];
+    await saveData();
+  }
+
+  // 서버 실패 시 → 로그인 화면만 표시, 데이터 건드리지 않음
+  document.getElementById('loading').style.display='none';
+  renderLoginProjectList();
+  document.getElementById('pin-gate').style.display='flex';
+  if(!ok) document.getElementById('pin-err').textContent='⚠️ 서버 연결 실패 — 데이터를 불러오지 못했습니다. 새로고침 해주세요.';
+}
+
+init();
+</script>
+</body>
+</html>
